@@ -1,0 +1,10 @@
+*.suo
+bin/
+obj/
+target
+*.dll
+*.pdb
+*.nupkg
+*.nuspec
+packages
+
