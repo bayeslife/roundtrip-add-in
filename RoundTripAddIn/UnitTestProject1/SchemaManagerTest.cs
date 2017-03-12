@@ -70,23 +70,23 @@ namespace UnitTestProject1
 
   
 
-        [TestMethod]
-        public void TestSchemaExport()
-        {
-            EAMetaModel meta = new EAMetaModel();            
-            meta.setupSchemaPackage();
+        //[TestMethod]
+        //public void TestSchemaExport()
+        //{
+        //    EAMetaModel meta = new EAMetaModel();            
+        //    meta.setupSchemaPackage();
             
-            FileManager fileManager = new FileManager(null);
-            SchemaManager.setFileManager(fileManager);
+        //    FileManager fileManager = new FileManager(null);
+        //    SchemaManager.setFileManager(fileManager);
 
-            //Test
-            JSchema jschema = SchemaManager.schemaToJsonSchema(EARepository.Repository, EARepository.currentDiagram).Value;
+        //    //Test
+        //    JSchema jschema = SchemaManager.schemaToJsonSchema(EARepository.Repository, EARepository.currentDiagram).Value;
 
 
-            Assert.IsTrue(jschema.Properties.ContainsKey("booleanAttr"));
-            Assert.AreEqual(JSchemaType.Boolean,jschema.Properties["booleanAttr"].Type);
+        //    Assert.IsTrue(jschema.Properties.ContainsKey("booleanAttr"));
+        //    Assert.AreEqual(JSchemaType.Boolean,jschema.Properties["booleanAttr"].Type);
 
-        }
+        //}
 
         [TestMethod]
         public void TestSchemaJavaType()
@@ -99,46 +99,46 @@ namespace UnitTestProject1
 
         }
 
-        [TestMethod]
-        public void TestExportClassWithListAttribute()
-        {
-            EAMetaModel meta = new EAMetaModel();            
-            meta.setupSchemaPackage();
+        //[TestMethod]
+        //public void TestExportClassWithListAttribute()
+        //{
+        //    EAMetaModel meta = new EAMetaModel();            
+        //    meta.setupSchemaPackage();
 
                                    
-            FileManager fileManager = new FileManager(null);
-            SchemaManager.setFileManager(fileManager);
+        //    FileManager fileManager = new FileManager(null);
+        //    SchemaManager.setFileManager(fileManager);
 
-            //Test
-            JSchema jschema = SchemaManager.schemaToJsonSchema(EARepository.Repository,EARepository.currentDiagram).Value;
+        //    //Test
+        //    JSchema jschema = SchemaManager.schemaToJsonSchema(EARepository.Repository,EARepository.currentDiagram).Value;
 
-            JSchema child = jschema.Properties["0OrMoreAttribute"];
-            Assert.AreEqual(JSchemaType.Array, child.Type);
+        //    JSchema child = jschema.Properties["0OrMoreAttribute"];
+        //    Assert.AreEqual(JSchemaType.Array, child.Type);
 
-            JSchema listStringProp = jschema.Properties["listStringAttr"];
-            Assert.AreEqual(JSchemaType.Array, listStringProp.Type);
-        }
+        //    JSchema listStringProp = jschema.Properties["listStringAttr"];
+        //    Assert.AreEqual(JSchemaType.Array, listStringProp.Type);
+        //}
 
-        [TestMethod]
-        public void TestExportClassWithObjecctAttribute()
-        {
-            EAMetaModel meta = new EAMetaModel();            
-            meta.setupSchemaPackage();
+        //[TestMethod]
+        //public void TestExportClassWithObjecctAttribute()
+        //{
+        //    EAMetaModel meta = new EAMetaModel();            
+        //    meta.setupSchemaPackage();
           
-            //Test
-            JSchema jschema = SchemaManager.schemaToJsonSchema(EARepository.Repository, EARepository.currentDiagram).Value;
+        //    //Test
+        //    JSchema jschema = SchemaManager.schemaToJsonSchema(EARepository.Repository, EARepository.currentDiagram).Value;
 
-            JSchema child = jschema.Properties["objectAttr"];
-            Assert.AreEqual(JSchemaType.String, child.Type);
+        //    JSchema child = jschema.Properties["objectAttr"];
+        //    Assert.AreEqual(JSchemaType.String, child.Type);
 
-            EA.Package package = SchemaManager.generateSample(EARepository.Repository);
-            object o = package.Diagrams.GetAt(0);
-            EA.Diagram diaObj = (EA.Diagram)o;
+        //    EA.Package package = SchemaManager.generateSample(EARepository.Repository);
+        //    object o = package.Diagrams.GetAt(0);
+        //    EA.Diagram diaObj = (EA.Diagram)o;
 
-            IList<EA.Element> objects = MetaDataManager.diagramSamples(EARepository.Repository,diaObj);
+        //    IList<EA.Element> objects = MetaDataManager.diagramSamples(EARepository.Repository,diaObj);
 
-            Assert.AreEqual(1+1, objects.Count);
-        }
+        //    Assert.AreEqual(1+1, objects.Count);
+        //}
 
 
         [TestMethod]
@@ -285,37 +285,37 @@ namespace UnitTestProject1
         }
 
 
-        [TestMethod]
-        public void TestInvalidSchema()
-        {
-            EAMetaModel meta = new EAMetaModel();            
-            meta.setupSchemaPackage();
+        //[TestMethod]
+        //public void TestInvalidSchema()
+        //{
+        //    EAMetaModel meta = new EAMetaModel();            
+        //    meta.setupSchemaPackage();
             
-            FileManager fileManager = new FileManager(null);
-            SchemaManager.setFileManager(fileManager);
+        //    FileManager fileManager = new FileManager(null);
+        //    SchemaManager.setFileManager(fileManager);
 
-            string theexception = "An exception should be thrown";
-            try
-            {
-                JSchema jschema = SchemaManager.schemaToJsonSchema(EARepository.Repository, EARepository.currentDiagram).Value;
-                Assert.Fail(theexception);
-            }
-            catch (ModelValidationException e)
-            {
-                string r = "";
-                foreach (string s in e.errors.messages)
-                {
-                    r += s;
-                }
-                Assert.AreNotEqual("Assert.Fail failed. " +theexception, r);
+        //    string theexception = "An exception should be thrown";
+        //    try
+        //    {
+        //        JSchema jschema = SchemaManager.schemaToJsonSchema(EARepository.Repository, EARepository.currentDiagram).Value;
+        //        Assert.Fail(theexception);
+        //    }
+        //    catch (ModelValidationException e)
+        //    {
+        //        string r = "";
+        //        foreach (string s in e.errors.messages)
+        //        {
+        //            r += s;
+        //        }
+        //        Assert.AreNotEqual("Assert.Fail failed. " +theexception, r);
 
-                Assert.IsTrue(r.Contains("Class Name needs to start with an uppercase character"));
+        //        Assert.IsTrue(r.Contains("Class Name needs to start with an uppercase character"));
 
-                Assert.IsTrue(r.Contains("Connector with empty SupplierEnd.Role is not allowed"));
+        //        Assert.IsTrue(r.Contains("Connector with empty SupplierEnd.Role is not allowed"));
 
-                Assert.IsTrue(r.Contains("Connector with no SupplierEnd.Role cardinality is not allowed"));
-            }                                   
-        }
+        //        Assert.IsTrue(r.Contains("Connector with no SupplierEnd.Role cardinality is not allowed"));
+        //    }                                   
+        //}
 
         [TestMethod]
         public void TestGetDataItemType()
@@ -368,33 +368,33 @@ namespace UnitTestProject1
             }
         }
 
-        [TestMethod]
-        public void TestExportClassWithFirstClassAttribute()
-        {
-            EAMetaModel meta = new EAMetaModel();            
-            meta.setupSchemaPackage();
+        //[TestMethod]
+        //public void TestExportClassWithFirstClassAttribute()
+        //{
+        //    EAMetaModel meta = new EAMetaModel();            
+        //    meta.setupSchemaPackage();
 
-            //Test
-            JSchema jschema = SchemaManager.schemaToJsonSchema(EARepository.Repository, EARepository.currentDiagram).Value;
+        //    //Test
+        //    JSchema jschema = SchemaManager.schemaToJsonSchema(EARepository.Repository, EARepository.currentDiagram).Value;
 
-            {
-                JSchema child = jschema.Properties["propClass"];
-                Assert.AreEqual(JSchemaType.String, child.Type);
-            }            
-            {
-                JSchema child = jschema.Properties["propertyClass2"];
-                Assert.AreEqual(JSchemaType.String, child.Type);
-            }
+        //    {
+        //        JSchema child = jschema.Properties["propClass"];
+        //        Assert.AreEqual(JSchemaType.String, child.Type);
+        //    }            
+        //    {
+        //        JSchema child = jschema.Properties["propertyClass2"];
+        //        Assert.AreEqual(JSchemaType.String, child.Type);
+        //    }
             
 
-            EA.Package package = SchemaManager.generateSample(EARepository.Repository);
-            object o = package.Diagrams.GetAt(0);
-            EA.Diagram diaObj = (EA.Diagram)o;
+        //    EA.Package package = SchemaManager.generateSample(EARepository.Repository);
+        //    object o = package.Diagrams.GetAt(0);
+        //    EA.Diagram diaObj = (EA.Diagram)o;
 
-            IList<EA.Element> objects = MetaDataManager.diagramSamples(EARepository.Repository, diaObj);
+        //    IList<EA.Element> objects = MetaDataManager.diagramSamples(EARepository.Repository, diaObj);
 
-            Assert.AreEqual(1+1, objects.Count);
-        }
+        //    Assert.AreEqual(1+1, objects.Count);
+        //}
 
         [TestMethod]
         public void TestRecursiveSchema()

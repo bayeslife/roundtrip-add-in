@@ -98,6 +98,7 @@ namespace RoundTripAddIn
             diagram.Stereotype = RoundTripAddInClass.EA_STEREOTYPE_POPULATIONDIAGRAM;
             diagram.Update();
         }
+        
 
         public static bool filterMethod(EA.Repository Repository, EA.Connector con, EA.Element e, EA.Element classifier)
         {

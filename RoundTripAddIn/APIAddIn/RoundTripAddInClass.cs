@@ -36,6 +36,8 @@ namespace RoundTripAddIn
         const string menuCreateSample = "&GenerateSample";
 
         const string menuExportPopulation = "&Export Population";
+        const string menuExportHierarchy = "&Export Hierarchy";
+        const string menuExportMapping = "&Export Mapping";
         const string menuSyncPopulation = "&Sync Population";
 
         const string menuSqlQuery = "&SqlQuery";
@@ -64,11 +66,15 @@ namespace RoundTripAddIn
         public static string EA_STEREOTYPE_SCHEMADIAGRAM = "SchemaDiagram";
         public static string EA_STEREOTYPE_SAMPLEDIAGRAM = "SampleDiagram";
         public static string EA_STEREOTYPE_POPULATIONDIAGRAM = "PopulationDiagram";
+        public static string EA_STEREOTYPE_MAPPINGDIAGRAM = "MappingDiagram";
+        public static string EA_STEREOTYPE_HIERARCHYDIAGRAM = "HierarchyDiagram";
 
         public static string EA_STEREOTYPE_SAMPLE = "Sample";
         public static string EA_STEREOTYPE_REQUEST = "Request";
         public static string EA_STEREOTYPE_DATAITEM = "DataItem";
         public static string EA_STEREOTYPE_POPULATION = "Population";
+        public static string EA_STEREOTYPE_HIERARCHY = "Hierarchy";
+        public static string EA_STEREOTYPE_MAPPING = "Mapping";
 
         public static string EA_STEREOTYPE_EMBEDDED = "Embedded";
 
@@ -120,9 +126,28 @@ namespace RoundTripAddIn
         public static double RAML_1_0 = 1.0;
         public static double[] RAML_VERSIONS = new double[2] { RAML_0_8, RAML_1_0 } ;
 
+        public static string EXPORT_PACKAGE = "export";
+
         public static string POPULATION_PATH = "population";
         public static string POPULATION_PROPERTY_GUID = "guid";
         public static string POPULATION_PROPERTY_NAME = "name";
+        public static string POPULATION_PROPERTY_NOTES = "notes";
+
+        public static string HIERARCHY_LEVEL = "level";
+        public static string HIERARCHY_PATH = "hierarchy";
+        public static string HIERARCHY_PROPERTY_TYPE = "type";
+        public static string HIERARCHY_PROPERTY_ID = "id";
+        public static string HIERARCHY_PROPERTY_PARENT = "parent";
+        public static string HIERARCHY_PROPERTY_NAME = "name";
+        public static string HIERARCHY_PROPERTY_DESCRIPTION = "description";
+        public static string HIERARCHY_PROPERTY_LEVEL = "min";
+
+        public static string MAPPING_PATH = "map";
+        public static string MAPPING_PROPERTY_SOURCE = "source";
+        public static string MAPPING_PROPERTY_SOURCE_NAME = "sourcename";
+        public static string MAPPING_PROPERTY_TARGET = "target";
+        public static string MAPPING_PROPERTY_TARGET_NAME = "targetname";
+        public static string MAPPING_PROPERTY_TARGET_VALUE = "value";
 
         ///
         /// Called Before EA starts to check Add-In Exists
@@ -144,6 +169,12 @@ namespace RoundTripAddIn
             {
                 logger.log("Did not find BasePath or DiagramPath in user settings");
             }
+
+            MappingManager.setLogger(logger);
+            MappingManager.setFileManager(fileManager);
+
+            HierarchyManager.setLogger(logger);
+            HierarchyManager.setFileManager(fileManager);
 
             PopulationManager.setLogger(logger);
             PopulationManager.setFileManager(fileManager);
@@ -189,11 +220,13 @@ namespace RoundTripAddIn
                     return menuHeader;
                                                                 
                 case menuHeader:
-                    string[] subMenusOther = { menuExportPackage,menuExportAll, menuExportDiagram, menuToggleLogging};
+                    string[] subMenusOther = { menuExportPackage, menuExportAll, menuExportDiagram, menuToggleLogging};
                     //string[] subMenusAPI = { menuExportPackage, menuExportAll, menuExportDiagram, menuExportAPI, menuExportAPIRAML1, menuValidateDiagram, menuUpdateClassFromInstance, menuUpdateInstanceFromClass, menuToggleLogging };                    
-                    string[] subMenusSchema = { menuExportPackage, menuExportAll, menuExportDiagram, menuValidateDiagram, menuExportSchema, menuCreateSample, menuUpdateClassFromInstance, menuUpdateInstanceFromClass, menuToggleLogging };
+                    string[] subMenusSchema = {  menuExportPackage, menuExportAll, menuExportDiagram, menuValidateDiagram, menuExportSchema, menuCreateSample, menuUpdateClassFromInstance, menuUpdateInstanceFromClass, menuToggleLogging };
                     string[] subMenusSample = { menuExportPackage, menuExportAll, menuExportDiagram, menuExportSample, menuValidateDiagram, menuSyncSample, menuUpdateClassFromInstance, menuUpdateInstanceFromClass, menuToggleLogging };
                     string[] subMenusPopulation = { menuExportPopulation, menuSyncPopulation, menuExportDiagram , menuToggleLogging};
+                    string[] subMenusHierarchy = { menuExportHierarchy, menuExportDiagram, menuToggleLogging };
+                    string[] subMenusMapping = { menuExportMapping, menuExportDiagram, menuToggleLogging };
                     //string[] subMenusCanonical = { menuExportAll, menuExportDiagram, menuExportCanonical, menuCreateSample, menuUpdateClassFromInstance, menuUpdateInstanceFromClass, menuToggleLogging };
 
                     if (diagram != null && diagram.Stereotype.Equals(RoundTripAddInClass.EA_STEREOTYPE_SCHEMADIAGRAM))
@@ -210,6 +243,16 @@ namespace RoundTripAddIn
                     {
                         logger.log("Population Menus");
                         return subMenusPopulation;
+                    }
+                    else if (diagram != null && diagram.Stereotype.Equals(RoundTripAddInClass.EA_STEREOTYPE_HIERARCHYDIAGRAM))
+                    {
+                        logger.log("Population Menus");
+                        return subMenusHierarchy;
+                    }
+                    else if (diagram != null && diagram.Stereotype.Equals(RoundTripAddInClass.EA_STEREOTYPE_MAPPINGDIAGRAM))
+                    {
+                        logger.log("Mapping Menus");
+                        return subMenusMapping;
                     }
                     //else if (diagram != null && diagram.Stereotype.Equals(RoundTripAddInClass.EA_STEREOTYPE_CANONICALDIAGRAM))
                     //{
@@ -308,6 +351,18 @@ namespace RoundTripAddIn
                             IsEnabled = true;
                         break;
 
+                    case menuExportMapping:
+                        IsEnabled = false;
+                        if (diagram != null && diagram.Stereotype.Equals(RoundTripAddInClass.EA_STEREOTYPE_MAPPINGDIAGRAM))
+                            IsEnabled = true;
+                        break;
+
+                    case menuExportHierarchy:
+                        IsEnabled = false;
+                        if (diagram != null && diagram.Stereotype.Equals(RoundTripAddInClass.EA_STEREOTYPE_HIERARCHYDIAGRAM))
+                            IsEnabled = true;
+                        break;
+
                     case menuExportAll:
                         IsEnabled = false;
                         if (diagram != null)           
@@ -351,6 +406,15 @@ namespace RoundTripAddIn
                                    
             switch (ItemName)
             {
+                case menuExportMapping:
+                    MappingManager.exportMapping(Repository, diagram);
+                    //MetaDataManager.setAsMappingDiagram(Repository, diagram);
+                    break;
+                case menuExportHierarchy:
+                    logger.log("Menu Export Hierarchy");
+                    HierarchyManager.exportHierarchy(Repository, diagram);
+                    //MetaDataManager.setAsHierarhcyDiagram(Repository, diagram);
+                    break;
                 case menuExportPopulation:                    
                     PopulationManager.exportPopulation(Repository, diagram);
                     MetaDataManager.setAsPopulationDiagram(Repository, diagram);

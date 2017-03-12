@@ -46,21 +46,20 @@ namespace RoundTripAddIn
             string containerName = container.Name;
             string containerClassifier = containerClassifierEl.Name;
 
-
             EA.Package samplePkg = Repository.GetPackageByID(diagram.PackageID);
             EA.Package samplesPackage = Repository.GetPackageByID(samplePkg.ParentID);
             EA.Package apiPackage = Repository.GetPackageByID(samplesPackage.ParentID);
             if (fileManager != null) {
                 fileManager.initializeAPI(RoundTripAddInClass.POPULATION_PATH);
                 fileManager.setup(RoundTripAddInClass.RAML_0_8);
-                if (!fileManager.populationExists(container.Name, containerClassifier))
+                if (!fileManager.populationExists(container.Name, containerClassifier,RoundTripAddInClass.POPULATION_PATH,container.Name))
                 {
-                    MessageBox.Show("No file exists at:" + fileManager.populationPath(container.Name, containerClassifier));
+                    MessageBox.Show("No file exists at:" + fileManager.exportPath(container.Name, containerClassifier,RoundTripAddInClass.POPULATION_PATH,container.Name));
                     return;
                 }
                 else
                 {
-                    string fullpath = fileManager.populationPath(containerName, containerClassifier);
+                    string fullpath = fileManager.exportPath(containerName, containerClassifier,RoundTripAddInClass.POPULATION_PATH,container.Name);
                     JArray jo = JArray.Parse(File.ReadAllText(fullpath));
                     sync_population(Repository, container, jo);
                 }
@@ -111,6 +110,12 @@ namespace RoundTripAddIn
                 }
                 if (p.Name == RoundTripAddInClass.POPULATION_PROPERTY_NAME)
                 {
+                    sample.Name = p.Value.ToString();
+                    continue;
+                }
+                if (p.Name == RoundTripAddInClass.POPULATION_PROPERTY_NOTES)
+                {
+                    sample.Notes = p.Value.ToString();
                     continue;
                 }
                 //string rsv=null;
@@ -296,6 +301,7 @@ namespace RoundTripAddIn
                     jsonClass = new JObject();
                     jsonClass.Add(new JProperty(RoundTripAddInClass.POPULATION_PROPERTY_GUID, sample.ElementGUID));
                     jsonClass.Add(new JProperty(RoundTripAddInClass.POPULATION_PROPERTY_NAME, sample.Name));
+                    jsonClass.Add(new JProperty(RoundTripAddInClass.POPULATION_PROPERTY_NOTES, sample.Notes));
                     container.Add(jsonClass);
                 }
 
@@ -484,6 +490,7 @@ namespace RoundTripAddIn
                 Hashtable ht = sampleToJObject(Repository, diagram);
                 string sample = (string)ht["sample"];
                 string clazz = (string)ht["class"];
+                string exportName = (string)ht["export"];
                 JArray container = (JArray)ht["json"];
 
 
@@ -508,13 +515,14 @@ namespace RoundTripAddIn
                     sourcecontrolPackage = "cdm";
                 }
 
-                sourcecontrolPackage = RoundTripAddInClass.POPULATION_PATH;
+                sourcecontrolPackage = RoundTripAddInClass.EXPORT_PACKAGE;
 
                 if (fileManager != null)
                 {
                     fileManager.initializeAPI(sourcecontrolPackage);
+                    fileManager.setDataName(RoundTripAddInClass.POPULATION_PATH);
                     fileManager.setup(RoundTripAddInClass.RAML_0_8);
-                    fileManager.exportPopulation(sample, clazz, msg);
+                    fileManager.exportData(sample, clazz, msg,RoundTripAddInClass.POPULATION_PATH,exportName);
                 }           
           }catch(ModelValidationException ex){
             MessageBox.Show(ex.errors.messages.ElementAt(0).ToString());

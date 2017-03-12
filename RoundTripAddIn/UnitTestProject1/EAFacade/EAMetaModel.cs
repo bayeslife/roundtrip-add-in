@@ -92,10 +92,12 @@ namespace UnitTestProject1.EAFacade
 
             o = schemaPackage.Diagrams.AddNew("Schema Diagram", "");
             schemaDiagram = (EADiagram)o;
+            schemaDiagram.Name = "Unit Test Schema Diagram";
             schemaDiagram.Stereotype = RoundTripAddInClass.EA_STEREOTYPE_SCHEMADIAGRAM;
             
             o = samplePackage.Diagrams.AddNew("Sample Diagram", "");
             sampleDiagram = (EADiagram)o;
+            sampleDiagram.Name = "Unit Test Sample Diagram";
             sampleDiagram.Stereotype = RoundTripAddInClass.EA_STEREOTYPE_SAMPLEDIAGRAM;
 
             //soaPackage = new EAPackage("UnitTestSOA");

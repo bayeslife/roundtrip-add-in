@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using EA;
 
 namespace UnitTestProject1.EAFacade
 {
@@ -195,7 +196,7 @@ namespace UnitTestProject1.EAFacade
 
         public string ElementGUID
         {
-            get { throw new NotImplementedException(); }
+            get { return "Unit Test GUID"; }
         }
 
         public int ElementID { get; set; }
@@ -759,7 +760,54 @@ namespace UnitTestProject1.EAFacade
             }
         }
 
+        public bool IsInternalDocArtifact
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        public string FQStereotype
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        public bool IsRoot
+        {
+            set
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        public string FQName
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+        }
+
         public string get_MiscData(int index)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool ImportInternalDocumentArtifact(string filenamne)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool ExportInternalDocumentArtifact(string filenamne)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Element Clone()
         {
             throw new NotImplementedException();
         }

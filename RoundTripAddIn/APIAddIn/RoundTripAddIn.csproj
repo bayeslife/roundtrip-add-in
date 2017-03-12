@@ -62,6 +62,8 @@
     <Compile Include="DependencyManager.cs" />
     <Compile Include="DiagramManager.cs" />
     <Compile Include="FileManager.cs" />
+    <Compile Include="MappingManager.cs" />
+    <Compile Include="HierarchyManager.cs" />
     <Compile Include="RoundTripAddInClass.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="MetaDataManager.cs" />

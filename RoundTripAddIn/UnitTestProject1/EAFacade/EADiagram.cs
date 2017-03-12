@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using EA;
 
 namespace UnitTestProject1.EAFacade
 {
@@ -379,6 +380,21 @@ namespace UnitTestProject1.EAFacade
             throw new NotImplementedException();
         }
 
+        public bool VirtualizeConnector(int connId, int action, int x, int y)
+        {
+            throw new NotImplementedException();
+        }
+
+        public int VirtualizedEnd(int connId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool FindElementInDiagram(int NewVal)
+        {
+            throw new NotImplementedException();
+        }
+
         public int cx
         {
             get
@@ -397,6 +413,32 @@ namespace UnitTestProject1.EAFacade
             {
                 throw new NotImplementedException();
             }
+            set
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        string IDualDiagram.MetaType
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+
+            set
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        public string FilterElements
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+
             set
             {
                 throw new NotImplementedException();

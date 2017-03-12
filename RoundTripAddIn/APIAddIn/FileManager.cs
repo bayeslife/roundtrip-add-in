@@ -11,6 +11,7 @@ namespace RoundTripAddIn
     {
         public string path = "d:\\generated";
         public string diagrampath = "d:\\tmpx";
+        public string dataName = "data";
 
         Logger logger = null;
         string apiPackageName;
@@ -32,15 +33,20 @@ namespace RoundTripAddIn
             this.diagrampath = path;
         }
 
+        public void setDataName(string n)
+        {
+            this.dataName = n;
+        }
+
         public string dataDirectoryPath(string apiName, double version)
         {
             string result;
             if (version == RoundTripAddInClass.RAML_0_8)
-                result = path + @"\" + apiName + @"\src\main\data\";
+                result = path + @"\" + apiName + @"\src\main\data\"+dataName+@"\";
             else
             {
                 String versionName = version.ToString("F1");
-                result = path + @"\" + apiName + @"\src\main\data\";                
+                result = path + @"\" + apiName + @"\src\main\data\"+dataName+@"\";                
             }            
             return result;
         }
@@ -92,9 +98,9 @@ namespace RoundTripAddIn
                 logger.log("FilePath:" + result);
             return result;
         }
-        public string populationPath(string sampleName, string classifierName)
+        public string exportPath(string sampleName, string classifierName,string exportType,string exportName)
         {
-            string result = dataDirectoryPath(apiPackageName, RoundTripAddInClass.RAML_0_8) + sampleName + "-population." + classifierName + ".json";
+            string result = dataDirectoryPath(apiPackageName, RoundTripAddInClass.RAML_0_8) + exportName + "-"+exportType+"." + classifierName + ".json";
             if (logger != null)
                 logger.log("FilePath:" + result);
             return result;
@@ -146,8 +152,8 @@ namespace RoundTripAddIn
         public void setup(double version)
         {
             string directorypath = dataDirectoryPath(this.apiPackageName,version);
-            //if (logger != null)
-            //    logger.log("Creating directory:" + directorypath);
+            if (logger != null)
+                logger.log("Creating directory:" + directorypath);
             System.IO.Directory.CreateDirectory(directorypath);
 
           
@@ -167,9 +173,9 @@ namespace RoundTripAddIn
             return System.IO.File.Exists(samplePath(sampleName,classifierName));
         }
 
-        public bool populationExists(string sampleName, string classifierName)
+        public bool populationExists(string sampleName, string classifierName,string exportType,string exportName)
         {
-            return System.IO.File.Exists(populationPath(sampleName, classifierName));
+            return System.IO.File.Exists(exportPath(sampleName, classifierName,exportType,exportName));
         }
 
         public bool schemaExists(string schemaName)
@@ -198,9 +204,9 @@ namespace RoundTripAddIn
             System.IO.File.WriteAllText(fullpath, content);
         }
 
-        public void exportPopulation(string sampleName, string classifierName, string content)
+        public void exportData(string sampleName, string classifierName, string content,string exportType,string exportName)
         {
-            string fullpath = populationPath(sampleName, classifierName);
+            string fullpath = exportPath(sampleName, classifierName,exportType,exportName);
             if (logger != null)
                 logger.log(fullpath);
             System.IO.File.WriteAllText(fullpath, content);

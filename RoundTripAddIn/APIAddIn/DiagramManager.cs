@@ -92,11 +92,11 @@ namespace RoundTripAddIn
         {            
             string confluencedata = null;
 
-            if (diagram.Version != "1.0")
-            {
-                confluencedata = diagram.Version;
-            }
-            else
+            //if (diagram.Version != "1.0")
+            //{
+            //    confluencedata = diagram.Version;
+            //}
+            //else
             {
                 confluencedata = diagram.Notes;
             }

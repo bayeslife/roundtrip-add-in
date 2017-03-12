@@ -56,35 +56,35 @@ namespace UnitTestProject1
             Assert.IsNotNull(api);
         }
 
-         [TestMethod]
+        [TestMethod]
         public void TestJObject()
         {
 
             JObject jo = new JObject();
-             jo.Add("foo", "bar");
+            jo.Add("foo", "bar");
 
-             jo.AddAnnotation("foobar2");
+            jo.AddAnnotation("foobar2");
             string serial = JsonConvert.SerializeObject(jo, Newtonsoft.Json.Formatting.Indented);
-            JObject jo2 = JObject.Parse(serial);            
+            JObject jo2 = JObject.Parse(serial);
         }
 
 
-        [TestMethod]
-        public void TestExportObjectWithListAttribute()
-        {
-            EAMetaModel meta = new EAMetaModel();                        
-            meta.setupSamplePackage();
+        //[TestMethod]
+        //public void TestExportObjectWithListAttribute()
+        //{
+        //    EAMetaModel meta = new EAMetaModel();                        
+        //    meta.setupSamplePackage();
                                                 
-            //Test
-            JObject jobject = (JObject)SampleManager.sampleToJObject(EARepository.Repository,EARepository.currentDiagram)["json"];
+        //    //Test
+        //    JObject jobject = (JObject)SampleManager.sampleToJObject(EARepository.Repository,EARepository.currentDiagram)["json"];
 
-            Assert.AreEqual(1,jobject.Count);
+        //    Assert.AreEqual(1,jobject.Count);
 
-            JToken t = null;
-            t = jobject.Value<JToken>("0OrMoreAttribute");            
-            Assert.IsNotNull(t);           
-            Assert.AreEqual(t.Type, JTokenType.Array);           
-        }
+        //    JToken t = null;
+        //    t = jobject.Value<JToken>("0OrMoreAttribute");            
+        //    Assert.IsNotNull(t);           
+        //    Assert.AreEqual(t.Type, JTokenType.Array);           
+        //}
 
         //[TestMethod]
         //public void TestExportClassWithObjecctAttribute()
@@ -105,62 +105,62 @@ namespace UnitTestProject1
         //}
 
 
-        [TestMethod]
-        public void TestExportSample()
-       {
-            EAMetaModel meta = new EAMetaModel().setupSchemaPackage();
+       // [TestMethod]
+       // public void TestExportSample()
+       //{
+       //     EAMetaModel meta = new EAMetaModel().setupSchemaPackage();
 
-            EAFactory rootClass = EAModel.createModel1(meta);
-            meta.setupSchemaPackage();
+       //     EAFactory rootClass = EAModel.createModel1(meta);
+       //     meta.setupSchemaPackage();
                         
-            EA.Package package = SchemaManager.generateSample(EARepository.Repository);
+       //     EA.Package package = SchemaManager.generateSample(EARepository.Repository);
 
-            Assert.AreEqual(1, package.Diagrams.Count);
-            object o = package.Diagrams.GetAt(0);
-            EA.Diagram diagram = (EA.Diagram)o;
+       //     Assert.AreEqual(1, package.Diagrams.Count);
+       //     object o = package.Diagrams.GetAt(0);
+       //     EA.Diagram diagram = (EA.Diagram)o;
 
-            Assert.AreEqual(3, package.Elements.Count);
+       //     Assert.AreEqual(3, package.Elements.Count);
 
-            o = package.Elements.GetAt(0);
-            EA.Element sample = (EA.Element)o;
-            sample.RunState = ObjectManager.addRunState(sample.RunState, "intAttribute", "123", rootClass.clientElement.ElementID);
+       //     o = package.Elements.GetAt(0);
+       //     EA.Element sample = (EA.Element)o;
+       //     sample.RunState = ObjectManager.addRunState(sample.RunState, "intAttribute", "123", rootClass.clientElement.ElementID);
 
-            meta.setupSamplePackage();
-            //Test
-            JObject jobject = (JObject)SampleManager.sampleToJObject(EARepository.Repository, diagram)["json"];
+       //     meta.setupSamplePackage();
+       //     //Test
+       //     JObject jobject = (JObject)SampleManager.sampleToJObject(EARepository.Repository, diagram)["json"];
 
-            Assert.AreEqual(8,jobject.Count);
-        }
+       //     Assert.AreEqual(8,jobject.Count);
+       // }
 
-        [TestMethod]
-        public void TestValidateDiagram_Invalid()
-        {
-            EAMetaModel meta = new EAMetaModel().setupSchemaPackage();            
-            meta.setupSamplePackage();
+        //[TestMethod]
+        //public void TestValidateDiagram_Invalid()
+        //{
+        //    EAMetaModel meta = new EAMetaModel().setupSchemaPackage();            
+        //    meta.setupSamplePackage();
           
-            //Test
-            IList<string> errors = SampleManager.diagramValidation(EARepository.Repository, meta.sampleDiagram);
+        //    //Test
+        //    IList<string> errors = SampleManager.diagramValidation(EARepository.Repository, meta.sampleDiagram);
 
-            Assert.IsTrue(errors.Count>0);            
-        }
+        //    Assert.IsTrue(errors.Count>0);            
+        //}
 
-          [TestMethod]
-        public void TestValidateDiagram_Valid()
-        {
-            EAMetaModel meta = new EAMetaModel().setupSchemaPackage();            
-            meta.setupSchemaPackage();
+        //  [TestMethod]
+        //public void TestValidateDiagram_Valid()
+        //{
+        //    EAMetaModel meta = new EAMetaModel().setupSchemaPackage();            
+        //    meta.setupSchemaPackage();
 
-            EA.Package package = SchemaManager.generateSample(EARepository.Repository);
+        //    EA.Package package = SchemaManager.generateSample(EARepository.Repository);
 
-            Assert.AreEqual(1, package.Diagrams.Count);
-            object o = package.Diagrams.GetAt(0);
-            EA.Diagram diagram = (EA.Diagram)o;
+        //    Assert.AreEqual(1, package.Diagrams.Count);
+        //    object o = package.Diagrams.GetAt(0);
+        //    EA.Diagram diagram = (EA.Diagram)o;
 
-            //Test
-            IList<string> errors = SampleManager.diagramValidation(EARepository.Repository, diagram);
+        //    //Test
+        //    IList<string> errors = SampleManager.diagramValidation(EARepository.Repository, diagram);
 
-            Assert.IsNull(errors);
-        }
+        //    Assert.IsNull(errors);
+        //}
 
 
     }

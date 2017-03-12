@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using EA;
 
 namespace UnitTestProject1.EAFacade
 {
@@ -382,7 +383,52 @@ namespace UnitTestProject1.EAFacade
             }
         }
 
+        public string ReturnValueAlias
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        public string MessageArguments
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        public string ForeignKeyInformation
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        public string FQStereotype
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        public Element AssociationClass
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+        }
+
         public string get_MiscData(int index)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool IsConnectorValid()
         {
             throw new NotImplementedException();
         }

@@ -25,7 +25,7 @@ namespace RoundTripAddIn.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("D:\\\\vdfn\\generated")]
+        [global::System.Configuration.DefaultSettingValueAttribute("c:\\\\vdfn-repo\\generated")]
         public string BasePath {
             get {
                 return ((string)(this["BasePath"]));
@@ -37,7 +37,7 @@ namespace RoundTripAddIn.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("D:\\\\vdfn")]
+        [global::System.Configuration.DefaultSettingValueAttribute("c:\\\\vdfn-repo")]
         public string DiagramPath {
             get {
                 return ((string)(this["DiagramPath"]));

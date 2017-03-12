@@ -764,5 +764,45 @@ namespace UnitTestProject1.EAFacade
         {
             throw new NotImplementedException();
         }
+
+        public string ExtractImagesFromNote(object Notes, object absPath, object imagePath, int applyMapOption)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool SaveImageToPath(object imagename, object Path)
+        {
+            throw new NotImplementedException();
+        }
+
+        public string MarkupText(object Text)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void SetMarkupTerms(object Terms)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void SetReplacementTerms(object Terms)
+        {
+            throw new NotImplementedException();
+        }
+
+        public string GetLocalPath(string sType, string sPath)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void ReloadPackage(int PackageID)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool ImportRASAsset(string pkgGUID, string protocol, string servername, string model, string storage, string rasGUID, string Version, string Password)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

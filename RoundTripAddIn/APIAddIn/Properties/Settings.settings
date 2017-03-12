@@ -3,10 +3,10 @@
   <Profiles />
   <Settings>
     <Setting Name="BasePath" Type="System.String" Scope="User">
-      <Value Profile="(Default)">D:\\vdfn\generated</Value>
+      <Value Profile="(Default)">c:\\vdfn-repo\generated</Value>
     </Setting>
     <Setting Name="DiagramPath" Type="System.String" Scope="User">
-      <Value Profile="(Default)">D:\\vdfn</Value>
+      <Value Profile="(Default)">c:\\vdfn-repo</Value>
     </Setting>
   </Settings>
 </SettingsFile>

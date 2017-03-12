@@ -361,5 +361,13 @@ namespace UnitTestProject1.EAFacade
                 throw new NotImplementedException();
             }
         }
+
+        public string FQStereotype
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+        }
     }
 }
