@@ -184,13 +184,27 @@ namespace RoundTripAddIn
 
             logger.log(root.RunState);
 
-            int level = 1;            
+            int level = 1;
+            String prefix = "";
+            String filename = "";  
             Dictionary<string, RunState> rs = ObjectManager.parseRunState(root.RunState);
             if (rs.ContainsKey(RoundTripAddInClass.HIERARCHY_LEVEL))
             {
                 level = Int32.Parse(rs[RoundTripAddInClass.HIERARCHY_LEVEL].value);
             }
             logger.log("Level is:"+level);
+
+            if (rs.ContainsKey(RoundTripAddInClass.PREFIX))
+            {
+                prefix = rs[RoundTripAddInClass.PREFIX].value;
+            }
+            logger.log("Prefix is:" + prefix);
+
+            if (rs.ContainsKey(RoundTripAddInClass.FILENAME))
+            {
+                filename = rs[RoundTripAddInClass.FILENAME].value;
+            }
+            logger.log("FileName is:" + filename);
 
             EA.Element rootClassifier = Repository.GetElementByID(root.ClassifierID);
 
@@ -223,10 +237,19 @@ namespace RoundTripAddIn
 
             parentsToJObject(Repository, diagram, container,sampleIds, null,parents, visited,level);
 
+
+            string msg = prefix + JsonConvert.SerializeObject(container, Newtonsoft.Json.Formatting.Indented) + "\n";
+
+            if (filename.Length ==0)
+            {
+                filename = root.Name;
+            }
+
             result.Add("sample", containerName);
             result.Add("class", containerClassifier);
-            result.Add("json", container);
-            result.Add("export", root.Name);
+            result.Add("json", msg);
+            result.Add("export", filename);
+            
             return result;
         }
 
@@ -236,7 +259,7 @@ namespace RoundTripAddIn
             {
                 if (!diagram.Stereotype.Equals(RoundTripAddInClass.EA_STEREOTYPE_HIERARCHYDIAGRAM))
                 {
-                    logger.log("exportSample: Ignore diagam that isnt a hierarchy diagram");
+                    logger.log("exportSample: Ignore diagram that isnt a hierarchy diagram");
                     return;
                 }
 
@@ -245,21 +268,16 @@ namespace RoundTripAddIn
                 Hashtable ht = sampleToJObject(Repository, diagram);
                 string sample = (string)ht["sample"];
                 string clazz = (string)ht["class"];
-                JArray container = (JArray)ht["json"];
-                string exportName = (string)ht["export"];
+                string container = (string)ht["json"];
+                string exportName = (string)ht["export"];                
 
-
-                //logger.log("Population Size:" + container.Count);
-                //KeyValuePair<string,JObject> kv = sampleToJObject(Repository, diagram);
-                //JObject container = kv.Value;
 
                 if (container == null)
                 {
                     MessageBox.Show("No object linked to root with classification sample declared nor  (older style) object of classification Request declared");
                     return;
                 }
-
-                string msg = JsonConvert.SerializeObject(container, Newtonsoft.Json.Formatting.Indented) + "\n";
+               
                 EA.Package samplePkg = Repository.GetPackageByID(diagram.PackageID);
                 EA.Package samplesPackage = Repository.GetPackageByID(samplePkg.ParentID);
                 EA.Package apiPackage = Repository.GetPackageByID(samplesPackage.ParentID);
@@ -277,7 +295,7 @@ namespace RoundTripAddIn
                     fileManager.initializeAPI(sourcecontrolPackage);
                     fileManager.setDataName(RoundTripAddInClass.HIERARCHY_PATH);
                     fileManager.setup(RoundTripAddInClass.RAML_0_8);                    
-                    fileManager.exportData(sample, clazz, msg,RoundTripAddInClass.HIERARCHY_PATH,exportName);
+                    fileManager.exportData(sample, clazz, container,RoundTripAddInClass.HIERARCHY_PATH,exportName);
                 }           
           }catch(ModelValidationException ex){
             MessageBox.Show(ex.errors.messages.ElementAt(0).ToString());

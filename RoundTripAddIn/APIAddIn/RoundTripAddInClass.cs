@@ -128,6 +128,9 @@ namespace RoundTripAddIn
 
         public static string EXPORT_PACKAGE = "export";
 
+        public static string FILENAME = "filename";
+        public static string PREFIX = "prefix";
+
         public static string POPULATION_PATH = "population";
         public static string POPULATION_PROPERTY_GUID = "guid";
         public static string POPULATION_PROPERTY_NAME = "name";

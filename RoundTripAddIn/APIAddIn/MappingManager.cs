@@ -167,6 +167,15 @@ namespace RoundTripAddIn
             EA.Element rootClassifier = Repository.GetElementByID(root.ClassifierID);
 
             logger.log("Export container:" + rootClassifier.Name );
+            
+            String prefix = "";            
+            Dictionary<string, RunState> rs = ObjectManager.parseRunState(root.RunState);
+
+        
+            if (rs.ContainsKey(RoundTripAddInClass.PREFIX))
+            {
+                prefix = rs[RoundTripAddInClass.PREFIX].value;
+            }        
 
             Dictionary<int, JObject> instances = new Dictionary<int, JObject>();
             JArray container = new JArray();
@@ -195,9 +204,11 @@ namespace RoundTripAddIn
 
             parentsToJObject(Repository, diagram, container,sampleIds, null,parents, visited);
 
+            string msg = prefix + JsonConvert.SerializeObject(container, Newtonsoft.Json.Formatting.Indented) + "\n";
+
             result.Add("sample", containerName);
             result.Add("class", containerClassifier);
-            result.Add("json", container);
+            result.Add("json", msg);
             result.Add("export", root.Name);
             return result;
         }
@@ -215,7 +226,7 @@ namespace RoundTripAddIn
                 Hashtable ht = sampleToJObject(Repository, diagram);
                 string sample = (string)ht["sample"];
                 string clazz = (string)ht["class"];
-                JArray container = (JArray)ht["json"];
+                string container = (string)ht["json"];
                 string export = (string)ht["export"];
 
 
@@ -229,7 +240,7 @@ namespace RoundTripAddIn
                     return;
                 }
 
-                string msg = JsonConvert.SerializeObject(container, Newtonsoft.Json.Formatting.Indented) + "\n";
+                //string msg = JsonConvert.SerializeObject(container, Newtonsoft.Json.Formatting.Indented) + "\n";
                 EA.Package samplePkg = Repository.GetPackageByID(diagram.PackageID);
                 EA.Package samplesPackage = Repository.GetPackageByID(samplePkg.ParentID);
                 EA.Package apiPackage = Repository.GetPackageByID(samplesPackage.ParentID);
@@ -247,7 +258,7 @@ namespace RoundTripAddIn
                     fileManager.initializeAPI(sourcecontrolPackage);
                     fileManager.setDataName(RoundTripAddInClass.MAPPING_PATH);
                     fileManager.setup(RoundTripAddInClass.RAML_0_8);
-                    fileManager.exportData(sample, clazz, msg,RoundTripAddInClass.MAPPING_PATH,export);
+                    fileManager.exportData(sample, clazz, container,RoundTripAddInClass.MAPPING_PATH,export);
                 }           
           }catch(ModelValidationException ex){
             MessageBox.Show(ex.errors.messages.ElementAt(0).ToString());
