@@ -175,10 +175,10 @@ namespace RoundTripAddIn
         {
             
             Hashtable result = new Hashtable();
-
-            IList<EA.Element> clazzes = MetaDataManager.diagramClasses(Repository, diagram);
-
-            IList<EA.Element> samples = MetaDataManager.diagramSamples(Repository, diagram);
+            
+            IList<EA.Element> samples = MetaDataManager.diagramElements(Repository, diagram);
+            
+            logger.log("Elements size:" + samples.Count);
 
             EA.Element root = findContainer(Repository, diagram);
 
@@ -254,7 +254,7 @@ namespace RoundTripAddIn
         }
 
         static public void exportHierarchy(EA.Repository Repository, EA.Diagram diagram)
-        {            
+        {              
             try
             {
                 if (!diagram.Stereotype.Equals(RoundTripAddInClass.EA_STEREOTYPE_HIERARCHYDIAGRAM))
@@ -266,6 +266,7 @@ namespace RoundTripAddIn
                 DiagramManager.captureDiagramLinks(diagram);
 
                 Hashtable ht = sampleToJObject(Repository, diagram);
+                
                 string sample = (string)ht["sample"];
                 string clazz = (string)ht["class"];
                 string container = (string)ht["json"];
@@ -277,19 +278,10 @@ namespace RoundTripAddIn
                     MessageBox.Show("No object linked to root with classification sample declared nor  (older style) object of classification Request declared");
                     return;
                 }
-               
-                EA.Package samplePkg = Repository.GetPackageByID(diagram.PackageID);
-                EA.Package samplesPackage = Repository.GetPackageByID(samplePkg.ParentID);
-                EA.Package apiPackage = Repository.GetPackageByID(samplesPackage.ParentID);
+                       
+                string sourcecontrolPackage = RoundTripAddInClass.EXPORT_PACKAGE;
 
-                string sourcecontrolPackage = apiPackage.Name;
-                if (MetaDataManager.isCDMPackage(Repository, apiPackage))
-                {
-                    sourcecontrolPackage = "cdm";
-                }
-
-                sourcecontrolPackage = RoundTripAddInClass.EXPORT_PACKAGE;
-
+                logger.log("saving");
                 if (fileManager != null)
                 {
                     fileManager.initializeAPI(sourcecontrolPackage);
@@ -379,6 +371,233 @@ namespace RoundTripAddIn
             }
                 
         }
-       
+
+
+        public static void syncHierarchy(EA.Repository Repository, EA.Diagram diagram)
+        {
+            logger.log("Sync Hierarchy");
+            IList<EA.Element> samples = MetaDataManager.diagramSamples(Repository, diagram);
+
+            EA.Element container = container = findContainer(Repository, diagram);
+            EA.Element containerClassifierEl = Repository.GetElementByID(container.ClassfierID);
+            string containerName = container.Name;
+            string containerClassifier = containerClassifierEl.Name;
+
+            EA.Package samplePkg = Repository.GetPackageByID(diagram.PackageID);
+                  
+            string sourcecontrolPackage = RoundTripAddInClass.EXPORT_PACKAGE;
+
+
+            if (fileManager != null)
+            {
+                fileManager.initializeAPI(sourcecontrolPackage);
+                fileManager.setDataName(RoundTripAddInClass.HIERARCHY_PATH);
+                fileManager.setup(RoundTripAddInClass.RAML_0_8);
+                if (!fileManager.populationExists(container.Name, containerClassifier, RoundTripAddInClass.HIERARCHY_PATH, container.Name))
+                {
+                    MessageBox.Show("No file exists at:" + fileManager.exportPath(container.Name, containerClassifier, RoundTripAddInClass.HIERARCHY_PATH, container.Name));
+                    return;
+                }
+                else
+                {
+                    string fullpath = fileManager.exportPath(containerName, containerClassifier, RoundTripAddInClass.HIERARCHY_PATH, container.Name);
+                    JArray jo = JArray.Parse(File.ReadAllText(fullpath));
+                    sync_hierarchy(Repository, diagram,container, jo, samplePkg);
+                    samplePkg.Update();
+                    diagram.DiagramLinks.Refresh();
+                    if (!diagram.Update())
+                    {
+                        logger.log(diagram.GetLastError());
+                    }
+                    
+                }
+            }
+        }
+
+        private static void sync_hierarchy(EA.Repository Repository, EA.Diagram diagram,EA.Element sample, JArray ja, EA.Package pkg)
+        {
+            logger.log("Syncing JArray:" + sample.Name);
+            Dictionary<string, RunState> rs = ObjectManager.parseRunState(sample.RunState);
+            Dictionary<string, RunState> nrs = new Dictionary<string, RunState>();
+
+            foreach (JObject jo in ja.Children<JObject>())
+            {
+                logger.log("Syncing Child:");
+                JToken guidToken = null;
+                if (jo.TryGetValue(RoundTripAddInClass.HIERARCHY_PROPERTY_ID, out guidToken))
+                {
+                    String guid = guidToken.ToString();
+                    EA.Element el = Repository.GetElementByGuid(guid);
+                    if (el != null)
+                    {
+                        //logger.log("Found element for guid" + guid);
+                        sync_hierarchy(Repository, diagram,el, jo, pkg);
+                    }
+                    else
+                    {
+                        logger.log("No element for id" + guid);
+                    }
+                }
+                else
+                {
+                    logger.log("No id, adding element" + jo.ToString());
+                    EA.Element el = pkg.Elements.AddNew("", "Object");
+                    logger.log("No guid, adding element" + jo.ToString());
+                    sync_hierarchy(Repository, diagram, el, jo, pkg);
+
+                }
+            }
+        }
+
+
+        private static void sync_hierarchy(EA.Repository Repository, EA.Diagram diagram,EA.Element sample, JObject jo, EA.Package pkg)
+        {
+            logger.log("Syncing JObject:" + sample.Name);
+            Dictionary<string, RunState> rs = ObjectManager.parseRunState(sample.RunState);
+            Dictionary<string, RunState> nrs = new Dictionary<string, RunState>();
+
+            foreach (JProperty p in jo.Properties())
+            {
+                if (p.Name == RoundTripAddInClass.HIERARCHY_PROPERTY_LEVEL)
+                {
+                    continue;
+                }
+                if (p.Name == RoundTripAddInClass.HIERARCHY_PROPERTY_ID)
+                {
+                    continue;
+                }
+                if (p.Name == RoundTripAddInClass.HIERARCHY_PROPERTY_NAME)
+                {
+                    sample.Name = p.Value.ToString();
+                    continue;
+                }
+                if (p.Name == RoundTripAddInClass.HIERARCHY_PROPERTY_DESCRIPTION)
+                {
+                    sample.Notes = p.Value.ToString();
+                    continue;
+                }
+
+                if (p.Name == RoundTripAddInClass.HIERARCHY_PROPERTY_TYPE)
+                {
+                    string classifierName = p.Value.ToString();
+                    EA.Element clazz = RepositoryHelper.queryClassifier(Repository, classifierName);
+                    if (clazz != null)
+                    {
+                        sample.ClassifierID = clazz.ElementID;
+                        continue;
+                    }
+                }
+                if (p.Name == RoundTripAddInClass.HIERARCHY_PROPERTY_PARENT)
+                {
+                    string guid = p.Value.ToString();
+                    EA.Element parent = Repository.GetElementByGuid(guid);
+                    if (parent == null)
+                    {
+                        logger.log("missing parent");
+                        continue;
+                    } else
+                    {
+                        linkToParent(Repository, diagram,sample, parent);
+                    }
+                    continue;
+                }
+
+                //string rsv=null;
+                if (p.Value.Type != JTokenType.Object && p.Value.Type != JTokenType.Array)
+                {
+                    //logger.log("Adding Property:" + sample.Name);
+                    RunState r;
+                    if (rs.ContainsKey(p.Name))
+                    {
+                        r = rs[p.Name];
+                    }
+                    else
+                    {
+                        r = new RunState();
+                        r.key = p.Name;
+                    }
+                    r.value = p.Value.ToString();
+
+                    nrs.Add(r.key, r);
+                }
+            }
+
+            sample.RunState = ObjectManager.renderRunState(nrs);
+            logger.log(sample.RunState);
+            sample.Update();
+
+            foreach (EA.Connector con in sample.Connectors)
+            {
+                logger.log("Connector:" + con.SupplierEnd.Role);
+                EA.Element related = null;
+
+                if (sample.ElementID == con.ClientID)
+                {
+                    related = Repository.GetElementByID(con.SupplierID);
+
+                    JProperty p = jo.Property(con.SupplierEnd.Role);
+
+                    if (p != null)
+                    {
+                        //logger.log("Found Json Property:" + con.SupplierEnd.Role);
+                        if (p.Value.Type == JTokenType.Object)
+                        {
+                            JObject pjo = (JObject)p.Value;
+                            sync_hierarchy(Repository, diagram, related, pjo, pkg);
+                        }
+                        else if (p.Value.Type == JTokenType.Array)
+                        {
+                            JArray ja = (JArray)p.Value;
+                            if (ja.Count > 0)
+                            {
+                                JToken t = ja.ElementAt(0);
+                                ja.RemoveAt(0);
+                                if (t.Type == JTokenType.Object)
+                                {
+                                    sync_hierarchy(Repository, diagram,related, (JObject)t, pkg);
+                                }
+                                else
+                                {
+                                    MessageBox.Show("Arrays of types other than object not supported");
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        private static void linkToParent(EA.Repository Repository, EA.Diagram diagram,EA.Element sample, EA.Element parent)        
+        {
+            foreach (EA.Connector con in sample.Connectors)
+            {
+                logger.log("Connector:" + con.SupplierEnd.Role);
+                EA.Element related = null;
+
+                if (sample.ElementID == con.ClientID && parent.ElementID == con.SupplierID)
+                {
+                    logger.log("Found parent link");
+                    return;
+                }
+                else if (sample.ElementID == con.SupplierID && parent.ElementID == con.ClientID)
+                {
+                    logger.log("Found parent link");
+                    return;
+                }
+            }
+
+            logger.log("No  parent link found");            
+            EA.Connector link = sample.Connectors.AddNew("", "Association");
+            link.SupplierID = parent.ElementID;
+            link.Update();
+            
+            EA.DiagramLink dl = diagram.DiagramLinks.AddNew("", "");            
+            dl.ConnectorID = link.ConnectorID;
+            sample.Connectors.Refresh();
+            dl.Update();
+            
+        }
+
+
     }
 }

@@ -14,9 +14,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Runtime.Remoting;
-using System.Xml;
-using System.Xml.Linq;
-using System.Xml.Serialization;
+
 
 
 namespace RoundTripAddIn
@@ -36,6 +34,8 @@ namespace RoundTripAddIn
             fileManager = fm;
         }
 
+       
+
         public static void syncPopulation(EA.Repository Repository, EA.Diagram diagram)
         {
             logger.log("Sync Population");
@@ -47,10 +47,14 @@ namespace RoundTripAddIn
             string containerClassifier = containerClassifierEl.Name;
 
             EA.Package samplePkg = Repository.GetPackageByID(diagram.PackageID);
-            EA.Package samplesPackage = Repository.GetPackageByID(samplePkg.ParentID);
-            EA.Package apiPackage = Repository.GetPackageByID(samplesPackage.ParentID);
+            
+        
+            string sourcecontrolPackage = RoundTripAddInClass.EXPORT_PACKAGE;
+
+
             if (fileManager != null) {
-                fileManager.initializeAPI(RoundTripAddInClass.POPULATION_PATH);
+                fileManager.initializeAPI(sourcecontrolPackage);
+                fileManager.setDataName(RoundTripAddInClass.POPULATION_PATH);
                 fileManager.setup(RoundTripAddInClass.RAML_0_8);
                 if (!fileManager.populationExists(container.Name, containerClassifier,RoundTripAddInClass.POPULATION_PATH,container.Name))
                 {
@@ -61,13 +65,14 @@ namespace RoundTripAddIn
                 {
                     string fullpath = fileManager.exportPath(containerName, containerClassifier,RoundTripAddInClass.POPULATION_PATH,container.Name);
                     JArray jo = JArray.Parse(File.ReadAllText(fullpath));
-                    sync_population(Repository, container, jo);
+                    sync_population(Repository, container, containerClassifierEl, jo, samplePkg);
+                    samplePkg.Update();
                 }
             }
         }
 
 
-        private static void sync_population(EA.Repository Repository, EA.Element sample, JArray ja)
+        private static void sync_population(EA.Repository Repository, EA.Element sample, EA.Element classifier, JArray ja, EA.Package pkg)
         {
             logger.log("Syncing JArray:" + sample.Name);
             Dictionary<string, RunState> rs = ObjectManager.parseRunState(sample.RunState);
@@ -75,32 +80,39 @@ namespace RoundTripAddIn
 
             foreach (JObject jo in ja.Children<JObject>())
             {
+                logger.log("Syncing Child:" );
                 JToken guidToken = null;
-                if (jo.TryGetValue("guid", out guidToken))
+                if (jo.TryGetValue(RoundTripAddInClass.POPULATION_PROPERTY_GUID, out guidToken))
                 {
                     String guid = guidToken.ToString();
                     EA.Element el = Repository.GetElementByGuid(guid);
                     if (el != null)
                     {
                         //logger.log("Found element for guid" + guid);
-                        sync_population(Repository, el, jo);
+                        sync_population(Repository, el, classifier, jo, pkg);
                     } else
                     {
                         logger.log("No element for guid" + guid);
                     }
                 } else
                 {
-                    //logger.log("No guid" + jo.ToString());                        
+                    logger.log("No guid, adding element" + jo.ToString());
+                    EA.Element el = pkg.Elements.AddNew("", "Object");
+                    logger.log("No guid, adding element" + jo.ToString());
+                    sync_population(Repository, el, classifier, jo, pkg);
+
                 }
             }
         }
 
 
-        private static void sync_population(EA.Repository Repository, EA.Element sample, JObject jo)
+        private static void sync_population(EA.Repository Repository, EA.Element sample, EA.Element classifier, JObject jo,EA.Package pkg)
         {
             logger.log("Syncing JObject:" + sample.Name);
             Dictionary<string, RunState> rs = ObjectManager.parseRunState(sample.RunState);
             Dictionary<string, RunState> nrs = new Dictionary<string, RunState>();
+            
+            sample.ClassifierID = classifier.ElementID;
 
             foreach (JProperty p in jo.Properties())
             {
@@ -117,6 +129,20 @@ namespace RoundTripAddIn
                 {
                     sample.Notes = p.Value.ToString();
                     continue;
+                }
+                
+
+                if (p.Name == RoundTripAddInClass.POPULATION_PROPERTY_TYPE)
+                {
+                    string classifierName = p.Value.ToString();
+                    EA.Element clazz = RepositoryHelper.queryClassifier(Repository, classifierName);
+                    if (clazz != null)
+                    {
+                        sample.ClassifierID = clazz.ElementID;
+                        continue;
+                    }
+
+                    
                 }
                 //string rsv=null;
                 if (p.Value.Type != JTokenType.Object && p.Value.Type != JTokenType.Array)
@@ -136,7 +162,7 @@ namespace RoundTripAddIn
             }
 
             sample.RunState = ObjectManager.renderRunState(nrs);
-            logger.log(sample.RunState);
+            //logger.log(sample.RunState);
             sample.Update();
 
             foreach (EA.Connector con in sample.Connectors)
@@ -156,7 +182,7 @@ namespace RoundTripAddIn
                         if (p.Value.Type == JTokenType.Object)
                         {
                             JObject pjo = (JObject)p.Value;
-                            sync_population(Repository, related, pjo);
+                            sync_population(Repository, related, classifier, pjo,pkg);
                         }
                         else if (p.Value.Type == JTokenType.Array)
                         {
@@ -167,7 +193,7 @@ namespace RoundTripAddIn
                                 ja.RemoveAt(0);
                                 if (t.Type == JTokenType.Object)
                                 {
-                                    sync_population(Repository, related, (JObject)t);
+                                    sync_population(Repository, related, classifier,(JObject)t,pkg);
                                 }
                                 else
                                 {
@@ -302,6 +328,9 @@ namespace RoundTripAddIn
                     jsonClass.Add(new JProperty(RoundTripAddInClass.POPULATION_PROPERTY_GUID, sample.ElementGUID));
                     jsonClass.Add(new JProperty(RoundTripAddInClass.POPULATION_PROPERTY_NAME, sample.Name));
                     jsonClass.Add(new JProperty(RoundTripAddInClass.POPULATION_PROPERTY_NOTES, sample.Notes));
+                    if(clazz!=null)
+                        jsonClass.Add(new JProperty(RoundTripAddInClass.POPULATION_PROPERTY_TYPE, clazz.Name));
+
                     container.Add(jsonClass);
                 }
 
@@ -472,7 +501,7 @@ namespace RoundTripAddIn
 
             //logger.log("REturning result");
             result.Add("sample", containerName);
-            result.Add("class", containerClassifier);
+            result.Add("class", containerClassifier);            
             result.Add("json", container);
             return result;
         }
@@ -489,8 +518,7 @@ namespace RoundTripAddIn
 
                 Hashtable ht = sampleToJObject(Repository, diagram);
                 string sample = (string)ht["sample"];
-                string clazz = (string)ht["class"];
-                string exportName = (string)ht["export"];
+                string clazz = (string)ht["class"];                
                 JArray container = (JArray)ht["json"];
 
 
@@ -522,7 +550,7 @@ namespace RoundTripAddIn
                     fileManager.initializeAPI(sourcecontrolPackage);
                     fileManager.setDataName(RoundTripAddInClass.POPULATION_PATH);
                     fileManager.setup(RoundTripAddInClass.RAML_0_8);
-                    fileManager.exportData(sample, clazz, msg,RoundTripAddInClass.POPULATION_PATH,exportName);
+                    fileManager.exportData(sample, clazz, msg,RoundTripAddInClass.POPULATION_PATH,sample);                    
                 }           
           }catch(ModelValidationException ex){
             MessageBox.Show(ex.errors.messages.ElementAt(0).ToString());

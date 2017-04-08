@@ -18,6 +18,17 @@ namespace RoundTripAddIn
         {
             logger = l;
         }
+        public static IList<EA.Element> diagramElements(EA.Repository Repository, EA.Diagram diagram)
+        {
+            List<EA.Element> samples = new List<EA.Element>();
+
+            foreach (EA.DiagramObject diagramObject in diagram.DiagramObjects)
+            {
+                EA.Element el = Repository.GetElementByID(diagramObject.ElementID);                
+                samples.Add(el);
+            }
+            return samples;
+        }
 
         static public IList<EA.Element> diagramSamples(EA.Repository Repository,EA.Diagram diagram)
         {

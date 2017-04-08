@@ -38,7 +38,9 @@ namespace RoundTripAddIn
         const string menuExportPopulation = "&Export Population";
         const string menuExportHierarchy = "&Export Hierarchy";
         const string menuExportMapping = "&Export Mapping";
+        const string menuSyncMapping = "&Sync Mapping";
         const string menuSyncPopulation = "&Sync Population";
+        const string menuSyncHierarchy = "&Sync Hierarhcy";
 
         const string menuSqlQuery = "&SqlQuery";
 
@@ -135,11 +137,12 @@ namespace RoundTripAddIn
         public static string POPULATION_PROPERTY_GUID = "guid";
         public static string POPULATION_PROPERTY_NAME = "name";
         public static string POPULATION_PROPERTY_NOTES = "notes";
+        public static string POPULATION_PROPERTY_TYPE = "type";
 
         public static string HIERARCHY_LEVEL = "level";
         public static string HIERARCHY_PATH = "hierarchy";
         public static string HIERARCHY_PROPERTY_TYPE = "type";
-        public static string HIERARCHY_PROPERTY_ID = "id";
+        public static string HIERARCHY_PROPERTY_ID = "id";        
         public static string HIERARCHY_PROPERTY_PARENT = "parent";
         public static string HIERARCHY_PROPERTY_NAME = "name";
         public static string HIERARCHY_PROPERTY_DESCRIPTION = "description";
@@ -228,8 +231,8 @@ namespace RoundTripAddIn
                     string[] subMenusSchema = {  menuExportPackage, menuExportAll, menuExportDiagram, menuValidateDiagram, menuExportSchema, menuCreateSample, menuUpdateClassFromInstance, menuUpdateInstanceFromClass, menuToggleLogging };
                     string[] subMenusSample = { menuExportPackage, menuExportAll, menuExportDiagram, menuExportSample, menuValidateDiagram, menuSyncSample, menuUpdateClassFromInstance, menuUpdateInstanceFromClass, menuToggleLogging };
                     string[] subMenusPopulation = { menuExportPopulation, menuSyncPopulation, menuExportDiagram , menuToggleLogging};
-                    string[] subMenusHierarchy = { menuExportHierarchy, menuExportDiagram, menuToggleLogging };
-                    string[] subMenusMapping = { menuExportMapping, menuExportDiagram, menuToggleLogging };
+                    string[] subMenusHierarchy = { menuExportHierarchy, menuSyncHierarchy, menuExportDiagram, menuToggleLogging };
+                    string[] subMenusMapping = { menuExportMapping, menuSyncMapping, menuExportDiagram, menuToggleLogging };
                     //string[] subMenusCanonical = { menuExportAll, menuExportDiagram, menuExportCanonical, menuCreateSample, menuUpdateClassFromInstance, menuUpdateInstanceFromClass, menuToggleLogging };
 
                     if (diagram != null && diagram.Stereotype.Equals(RoundTripAddInClass.EA_STEREOTYPE_SCHEMADIAGRAM))
@@ -354,13 +357,17 @@ namespace RoundTripAddIn
                             IsEnabled = true;
                         break;
 
+                   
+                   
                     case menuExportMapping:
+                    case menuSyncMapping:
                         IsEnabled = false;
                         if (diagram != null && diagram.Stereotype.Equals(RoundTripAddInClass.EA_STEREOTYPE_MAPPINGDIAGRAM))
                             IsEnabled = true;
                         break;
 
                     case menuExportHierarchy:
+                    case menuSyncHierarchy:
                         IsEnabled = false;
                         if (diagram != null && diagram.Stereotype.Equals(RoundTripAddInClass.EA_STEREOTYPE_HIERARCHYDIAGRAM))
                             IsEnabled = true;
@@ -413,6 +420,10 @@ namespace RoundTripAddIn
                     MappingManager.exportMapping(Repository, diagram);
                     //MetaDataManager.setAsMappingDiagram(Repository, diagram);
                     break;
+                case menuSyncMapping:
+                    MappingManager.syncMapping(Repository, diagram);
+                    break;
+
                 case menuExportHierarchy:
                     logger.log("Menu Export Hierarchy");
                     HierarchyManager.exportHierarchy(Repository, diagram);
@@ -424,6 +435,10 @@ namespace RoundTripAddIn
                     break;
                 case menuSyncPopulation:
                     PopulationManager.syncPopulation(Repository, diagram);
+                    break;
+
+                case menuSyncHierarchy:
+                    HierarchyManager.syncHierarchy(Repository, diagram);
                     break;
 
                 case menuExportAll:                    
