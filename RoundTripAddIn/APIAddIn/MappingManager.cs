@@ -164,18 +164,16 @@ namespace RoundTripAddIn
 
             EA.Element root = findContainer(Repository, diagram);
 
+            logger.log("MetaData container:" + root.Name);
+
             EA.Element rootClassifier = Repository.GetElementByID(root.ClassifierID);
+
+            MetaDataManager.extractDiagramMetaData(result, root);
 
             logger.log("Export container:" + rootClassifier.Name);
 
-            String prefix = "";
-            Dictionary<string, RunState> rs = ObjectManager.parseRunState(root.RunState);
-
-
-            if (rs.ContainsKey(RoundTripAddInClass.PREFIX))
-            {
-                prefix = rs[RoundTripAddInClass.PREFIX].value;
-            }
+            String prefix = (string)result[RoundTripAddInClass.PREFIX];
+            
 
             Dictionary<int, JObject> instances = new Dictionary<int, JObject>();
             JArray container = new JArray();
@@ -209,7 +207,7 @@ namespace RoundTripAddIn
             result.Add("sample", containerName);
             result.Add("class", containerClassifier);
             result.Add("json", msg);
-            result.Add("export", root.Name);
+            //result.Add("export", root.Name);
             return result;
         }
 
@@ -227,10 +225,10 @@ namespace RoundTripAddIn
                 string sample = (string)ht["sample"];
                 string clazz = (string)ht["class"];
                 string container = (string)ht["json"];
-                string export = (string)ht["export"];
+                string export = (string)ht[RoundTripAddInClass.FILENAME];
+                string sourcecontrolPackage = (string)ht[RoundTripAddInClass.PROJECT];
 
-
-                //logger.log("Population Size:" + container.Count);
+                logger.log("Project:" + sourcecontrolPackage);
                 //KeyValuePair<string,JObject> kv = sampleToJObject(Repository, diagram);
                 //JObject container = kv.Value;
 
@@ -243,7 +241,7 @@ namespace RoundTripAddIn
                 //string msg = JsonConvert.SerializeObject(container, Newtonsoft.Json.Formatting.Indented) + "\n";
                 EA.Package samplePkg = Repository.GetPackageByID(diagram.PackageID);
                
-                string sourcecontrolPackage = RoundTripAddInClass.EXPORT_PACKAGE;
+                
 
                 if (fileManager != null)
                 {
@@ -350,13 +348,17 @@ namespace RoundTripAddIn
             string containerClassifier = containerClassifierEl.Name;
 
             EA.Package samplePkg = Repository.GetPackageByID(diagram.PackageID);
+
+
+            Hashtable ht = new Hashtable();
+            MetaDataManager.extractDiagramMetaData(ht, container);
+
+            string project = (String)ht[RoundTripAddInClass.PROJECT];
+
             
-            string sourcecontrolPackage = RoundTripAddInClass.EXPORT_PACKAGE;
-
-
             if (fileManager != null)
             {
-                fileManager.initializeAPI(sourcecontrolPackage);
+                fileManager.initializeAPI(project);
                 fileManager.setDataName(RoundTripAddInClass.MAPPING_PATH);
                 fileManager.setup(RoundTripAddInClass.RAML_0_8);
                 if (!fileManager.populationExists(container.Name, containerClassifier, RoundTripAddInClass.MAPPING_PATH, container.Name))

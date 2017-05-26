@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Collections;
 
 namespace RoundTripAddIn
 {
@@ -378,6 +379,57 @@ namespace RoundTripAddIn
                 EA.Package parentPackage = Repository.GetPackageByID(package.ParentID);
                 return isCDMPackage(Repository, parentPackage);
             }
+        }
+
+        static public void extractDiagramMetaData(Hashtable result,EA.Element root)
+        {
+            int level = 1;
+            String prefix = "";
+            String filename = "";
+            String project = "";
+
+
+            String runState = root.RunState;
+
+            logger.log("RunState is:" + runState);
+
+            Dictionary<string, RunState> rs = ObjectManager.parseRunState(runState);
+            if (rs.ContainsKey(RoundTripAddInClass.HIERARCHY_LEVEL))
+            {
+                level = Int32.Parse(rs[RoundTripAddInClass.HIERARCHY_LEVEL].value);
+                result.Add(RoundTripAddInClass.HIERARCHY_LEVEL, level);
+                logger.log("Level is:" + level);
+            }
+            
+
+            if (rs.ContainsKey(RoundTripAddInClass.PREFIX))
+            {
+                prefix = rs[RoundTripAddInClass.PREFIX].value;
+                result.Add(RoundTripAddInClass.PREFIX, prefix);
+                logger.log("Prefix is:" + prefix);
+
+            }            
+
+            
+            if (rs.ContainsKey(RoundTripAddInClass.FILENAME))
+            {
+                filename = rs[RoundTripAddInClass.FILENAME].value;               
+            }else
+            {
+                filename = root.Name;
+            }
+            result.Add(RoundTripAddInClass.FILENAME, filename);
+            logger.log("FileName is:" + filename);
+
+            if (rs.ContainsKey(RoundTripAddInClass.PROJECT))
+            {
+                project = rs[RoundTripAddInClass.PROJECT].value;                
+                result.Add(RoundTripAddInClass.PROJECT, project);
+            }else
+            {
+                result.Add(RoundTripAddInClass.PROJECT,RoundTripAddInClass.EXPORT_PACKAGE);
+            }
+            logger.log("Project is:" + project);
         }
     }
 }

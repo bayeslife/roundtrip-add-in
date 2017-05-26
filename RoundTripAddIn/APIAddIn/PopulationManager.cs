@@ -47,13 +47,14 @@ namespace RoundTripAddIn
             string containerClassifier = containerClassifierEl.Name;
 
             EA.Package samplePkg = Repository.GetPackageByID(diagram.PackageID);
-            
-        
-            string sourcecontrolPackage = RoundTripAddInClass.EXPORT_PACKAGE;
 
+            Hashtable ht = new Hashtable();
+            MetaDataManager.extractDiagramMetaData(ht, container);
+
+            string project = (String)ht[RoundTripAddInClass.PROJECT];        
 
             if (fileManager != null) {
-                fileManager.initializeAPI(sourcecontrolPackage);
+                fileManager.initializeAPI(project);
                 fileManager.setDataName(RoundTripAddInClass.POPULATION_PATH);
                 fileManager.setup(RoundTripAddInClass.RAML_0_8);
                 if (!fileManager.populationExists(container.Name, containerClassifier,RoundTripAddInClass.POPULATION_PATH,container.Name))
@@ -165,104 +166,49 @@ namespace RoundTripAddIn
             //logger.log(sample.RunState);
             sample.Update();
 
-            foreach (EA.Connector con in sample.Connectors)
-            {
-                logger.log("Connector:" + con.SupplierEnd.Role);
-                EA.Element related = null;
+            //foreach (EA.Connector con in sample.Connectors)
+            //{
+            //    logger.log("Connector:" + con.SupplierEnd.Role);
+            //    EA.Element related = null;
 
-                if (sample.ElementID == con.ClientID)
-                {
-                    related = Repository.GetElementByID(con.SupplierID);
+            //    if (sample.ElementID == con.ClientID)
+            //    {
+            //        related = Repository.GetElementByID(con.SupplierID);
 
-                    JProperty p = jo.Property(con.SupplierEnd.Role);
+            //        JProperty p = jo.Property(con.SupplierEnd.Role);
 
-                    if (p != null)
-                    {
-                        //logger.log("Found Json Property:" + con.SupplierEnd.Role);
-                        if (p.Value.Type == JTokenType.Object)
-                        {
-                            JObject pjo = (JObject)p.Value;
-                            sync_population(Repository, related, classifier, pjo,pkg);
-                        }
-                        else if (p.Value.Type == JTokenType.Array)
-                        {
-                            JArray ja = (JArray)p.Value;
-                            if (ja.Count > 0)
-                            {
-                                JToken t = ja.ElementAt(0);
-                                ja.RemoveAt(0);
-                                if (t.Type == JTokenType.Object)
-                                {
-                                    sync_population(Repository, related, classifier,(JObject)t,pkg);
-                                }
-                                else
-                                {
-                                    MessageBox.Show("Arrays of types other than object not supported");
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+            //        if (p != null)
+            //        {
+            //            //logger.log("Found Json Property:" + con.SupplierEnd.Role);
+            //            if (p.Value.Type == JTokenType.Object)
+            //            {
+            //                JObject pjo = (JObject)p.Value;
+            //                sync_population(Repository, related, classifier, pjo,pkg);
+            //            }
+            //            else if (p.Value.Type == JTokenType.Array)
+            //            {
+            //                JArray ja = (JArray)p.Value;
+            //                if (ja.Count > 0)
+            //                {
+            //                    JToken t = ja.ElementAt(0);
+            //                    ja.RemoveAt(0);
+            //                    if (t.Type == JTokenType.Object)
+            //                    {
+            //                        sync_population(Repository, related, classifier,(JObject)t,pkg);
+            //                    }
+            //                    else
+            //                    {
+            //                        MessageBox.Show("Arrays of types other than object not supported");
+            //                    }
+            //                }
+            //            }
+            //        }
+            //    }
+            //}
         }
 
 
-        static public object convertEATypeToValue(string t, string value)
-        {
-            if (t.Equals(RoundTripAddInClass.EA_TYPE_NUMBER) || t.Equals(RoundTripAddInClass.EA_TYPE_FLOAT))
-            {
-                try
-                {
-                    return float.Parse(value);
-                }
-                catch (FormatException e)
-                {
-                    return 0;// "Not a number:"+ value;
-                }
-            }
-            if (t.Equals(RoundTripAddInClass.EA_TYPE_INT))
-            {
-                try
-                {
-                    return int.Parse(value);
-                }
-                catch (FormatException)
-                {
-                    return 0;
-                }
-            }
-            else if (t.Equals(RoundTripAddInClass.EA_TYPE_DATE))
-            {
-
-                return value;
-
-            }
-            else if (t.Equals(RoundTripAddInClass.EA_TYPE_BOOLEAN))
-            {
-                try
-                {
-                    return bool.Parse(value);
-                }
-                catch (FormatException)
-                {
-                    return false;
-                }
-
-            }
-            else if (t.Equals(RoundTripAddInClass.EA_TYPE_DECIMAL))
-            {
-                try
-                {
-                    return float.Parse(value);
-                }
-                catch (FormatException)
-                {
-                    return 0;
-                }
-            }
-            else
-                return value;
-        }
+        
 
         static EA.Element findContainer(EA.Repository Repository, EA.Diagram diagram)
         {
@@ -282,6 +228,12 @@ namespace RoundTripAddIn
         }
 
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="Repository"></param>
+        /// <param name="diagram"></param>
+        /// <returns></returns>
         static public Hashtable sampleToJObject(EA.Repository Repository, EA.Diagram diagram)
         {
             Hashtable result = new Hashtable();
@@ -291,6 +243,8 @@ namespace RoundTripAddIn
             IList<EA.Element> samples = MetaDataManager.diagramSamples(Repository, diagram);
 
             EA.Element root = findContainer(Repository, diagram);
+
+            MetaDataManager.extractDiagramMetaData(result, root);
 
             EA.Element rootClassifier = Repository.GetElementByID(root.ClassifierID);
 
@@ -304,7 +258,7 @@ namespace RoundTripAddIn
 
             foreach (EA.Element sample in samples)
             {
-                //logger.log("Sample Name:" + sample.Name+"\t"+sample.ElementID);
+                logger.log("Sample Name:" + sample.Name);
 
                 if (sample.Stereotype == RoundTripAddInClass.EA_STEREOTYPE_POPULATION)
                     continue;
@@ -336,89 +290,7 @@ namespace RoundTripAddIn
 
                 string rs = sample.RunState;
 
-                // Loop through all attributes in run state and add to json
-                Dictionary<string, RunState> runstate = ObjectManager.parseRunState(rs);
-                foreach (string key in runstate.Keys)
-                {
-                    logger.log("Adding property:" + key + " =>" + runstate[key].value);
-                    object o = runstate[key].value;
-
-                    // Find classifier attribute specified in run state
-                    string attrType = null;
-                    string attrUpperBound = null;
-                    if (clazz != null) {
-                        foreach (EA.Attribute a in clazz.Attributes)
-                        {
-                            if (a.Name.Equals(key))
-                            {
-                                attrType = a.Type;
-                                attrUpperBound = a.UpperBound;
-                                break;
-                            }
-                        }
-
-                        // Check if attribuite is defined as related enumeration. When cardinaltity is 0..* then set the attribute cardinality so we serialize as an array
-                        foreach (EA.Connector con in clazz.Connectors)
-                        {
-                            // Check relation is named the same as the run state attribute name and is an enumeration
-                            EA.Element related = Repository.GetElementByID(con.SupplierID);
-                            if (con.SupplierEnd.Role == key && related.Type == RoundTripAddInClass.EA_TYPE_ENUMERATION)
-                            {
-                                //if (con.SupplierEnd.Cardinality.Equals(RoundTripAddInClass.CARDINALITY_0_TO_MANY))
-                                //{
-                                //logger.log("  matching enum with 0..*:" + con.SupplierEnd.Cardinality);
-                                //}
-                                attrType = related.Type;
-                                attrUpperBound = con.SupplierEnd.Cardinality;
-                                break;
-                            }
-                        }
-
-                        // Check if attribute is defined as related DataItem
-                        foreach (EA.Connector con in clazz.Connectors)
-                        {
-                            // Check relation is named the same as the run state attribute name and is an enumeration
-                            EA.Element related = Repository.GetElementByID(con.SupplierID);
-                            if (con.SupplierEnd.Role == key && related.Stereotype == RoundTripAddInClass.EA_STEREOTYPE_DATAITEM)
-                            {
-                                attrType = SchemaManager.getDataItemType(related);
-                                attrUpperBound = con.SupplierEnd.Cardinality;
-                                break;
-                            }
-                        }
-
-                    }
-
-                    // Add attribute to json as either value or array
-                    if (attrType != null)
-                    {
-                        //logger.log("  upper bound:" + key + " =>" + attrUpperBound);
-                        if (attrUpperBound.Equals("*") || attrUpperBound.Equals(RoundTripAddInClass.CARDINALITY_0_TO_MANY))
-                        {
-                            // Create array and split values separated by commas
-                            JArray ja = new JArray();
-                            foreach (string value in runstate[key].value.Split(','))
-                            {
-                                o = convertEATypeToValue(attrType, value);
-                                ja.Add(o);
-                            }
-                            jsonClass.Add(new JProperty(key, ja));
-                        }
-                        else
-                        {
-                            // Not array so convert and add attribute and formatted value
-                            o = convertEATypeToValue(attrType, runstate[key].value);
-                            //logger.log("Attr:" + attrType + " " + o.ToString());
-                            jsonClass.Add(new JProperty(key, o));
-                        }
-                    }
-                    else
-                    {
-                        // No classifier found so add as object serialized as string
-                        //logger.log("Attr:" + key + "-" + o.ToString());
-                        jsonClass.Add(new JProperty(key, o));
-                    }
-                }
+                ObjectManager.addRunStateToJson(rs, jsonClass);         
             }
 
             logger.log("Export container:" + containerName);
@@ -537,17 +409,15 @@ namespace RoundTripAddIn
                 EA.Package samplesPackage = Repository.GetPackageByID(samplePkg.ParentID);
                 EA.Package apiPackage = Repository.GetPackageByID(samplesPackage.ParentID);
 
-                string sourcecontrolPackage = apiPackage.Name;
-                if (MetaDataManager.isCDMPackage(Repository, apiPackage))
-                {
-                    sourcecontrolPackage = "cdm";
-                }
+                
+                String project = (String)ht[RoundTripAddInClass.PROJECT];
+                if(project==null)
+                    project = RoundTripAddInClass.EXPORT_PACKAGE;
 
-                sourcecontrolPackage = RoundTripAddInClass.EXPORT_PACKAGE;
 
                 if (fileManager != null)
                 {
-                    fileManager.initializeAPI(sourcecontrolPackage);
+                    fileManager.initializeAPI(project);
                     fileManager.setDataName(RoundTripAddInClass.POPULATION_PATH);
                     fileManager.setup(RoundTripAddInClass.RAML_0_8);
                     fileManager.exportData(sample, clazz, msg,RoundTripAddInClass.POPULATION_PATH,sample);                    

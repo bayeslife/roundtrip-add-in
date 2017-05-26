@@ -130,14 +130,14 @@ namespace RoundTripAddIn
                 jsonClass.Add(new JProperty(RoundTripAddInClass.HIERARCHY_PROPERTY_PARENT, "null"));
             container.Add(jsonClass);
 
+            ObjectManager.addRunStateToJson(parent.RunState, jsonClass);
+
             IList<EA.Element> children = new List<EA.Element>();
             visited.Add(parent.ElementID);
             foreach (EA.Connector con in parent.Connectors)
             {
-
                 if (!DiagramManager.isVisible(con)) //skip not visiable
                     continue;
-
 
                     EA.Element related = Repository.GetElementByID(con.SupplierID);
                 if(related.ElementID== parent.ElementID)
@@ -180,32 +180,14 @@ namespace RoundTripAddIn
             
             logger.log("Elements size:" + samples.Count);
 
-            EA.Element root = findContainer(Repository, diagram);
+            EA.Element root = findContainer(Repository, diagram);            
 
-            logger.log(root.RunState);
+            MetaDataManager.extractDiagramMetaData(result, root);
 
-            int level = 1;
-            String prefix = "";
-            String filename = "";  
-            Dictionary<string, RunState> rs = ObjectManager.parseRunState(root.RunState);
-            if (rs.ContainsKey(RoundTripAddInClass.HIERARCHY_LEVEL))
-            {
-                level = Int32.Parse(rs[RoundTripAddInClass.HIERARCHY_LEVEL].value);
-            }
-            logger.log("Level is:"+level);
-
-            if (rs.ContainsKey(RoundTripAddInClass.PREFIX))
-            {
-                prefix = rs[RoundTripAddInClass.PREFIX].value;
-            }
-            logger.log("Prefix is:" + prefix);
-
-            if (rs.ContainsKey(RoundTripAddInClass.FILENAME))
-            {
-                filename = rs[RoundTripAddInClass.FILENAME].value;
-            }
-            logger.log("FileName is:" + filename);
-
+            int level =(int) result[RoundTripAddInClass.HIERARCHY_LEVEL];
+            //String prefix = "";
+            //String filename = "";  
+            
             EA.Element rootClassifier = Repository.GetElementByID(root.ClassifierID);
 
             logger.log("Export container:" + rootClassifier.Name );
@@ -238,17 +220,19 @@ namespace RoundTripAddIn
             parentsToJObject(Repository, diagram, container,sampleIds, null,parents, visited,level);
 
 
-            string msg = prefix + JsonConvert.SerializeObject(container, Newtonsoft.Json.Formatting.Indented) + "\n";
+            string msg = result[RoundTripAddInClass.PREFIX] + JsonConvert.SerializeObject(container, Newtonsoft.Json.Formatting.Indented) + "\n";
 
+            String filename = (String)result[RoundTripAddInClass.FILENAME];
             if (filename.Length ==0)
             {
                 filename = root.Name;
+                result.Remove(RoundTripAddInClass.FILENAME);
+                result.Add(RoundTripAddInClass.FILENAME, filename);                
             }
 
             result.Add("sample", containerName);
             result.Add("class", containerClassifier);
-            result.Add("json", msg);
-            result.Add("export", filename);
+            result.Add("json", msg);                        
             
             return result;
         }
@@ -270,7 +254,8 @@ namespace RoundTripAddIn
                 string sample = (string)ht["sample"];
                 string clazz = (string)ht["class"];
                 string container = (string)ht["json"];
-                string exportName = (string)ht["export"];                
+                string exportName = (string)ht[RoundTripAddInClass.FILENAME];   
+                string projectName = (string)ht[RoundTripAddInClass.PROJECT];
 
 
                 if (container == null)
@@ -279,12 +264,13 @@ namespace RoundTripAddIn
                     return;
                 }
                        
-                string sourcecontrolPackage = RoundTripAddInClass.EXPORT_PACKAGE;
+                if(projectName==null)
+                    projectName = RoundTripAddInClass.EXPORT_PACKAGE;
 
                 logger.log("saving");
                 if (fileManager != null)
                 {
-                    fileManager.initializeAPI(sourcecontrolPackage);
+                    fileManager.initializeAPI(projectName);
                     fileManager.setDataName(RoundTripAddInClass.HIERARCHY_PATH);
                     fileManager.setup(RoundTripAddInClass.RAML_0_8);                    
                     fileManager.exportData(sample, clazz, container,RoundTripAddInClass.HIERARCHY_PATH,exportName);
@@ -383,9 +369,12 @@ namespace RoundTripAddIn
             string containerName = container.Name;
             string containerClassifier = containerClassifierEl.Name;
 
+            Hashtable ht = new Hashtable();
+            MetaDataManager.extractDiagramMetaData(ht, container);
+
             EA.Package samplePkg = Repository.GetPackageByID(diagram.PackageID);
-                  
-            string sourcecontrolPackage = RoundTripAddInClass.EXPORT_PACKAGE;
+
+            string sourcecontrolPackage = (string)ht[RoundTripAddInClass.PROJECT];
 
 
             if (fileManager != null)
@@ -425,9 +414,11 @@ namespace RoundTripAddIn
                 logger.log("Syncing Child:");
                 JToken guidToken = null;
                 if (jo.TryGetValue(RoundTripAddInClass.HIERARCHY_PROPERTY_ID, out guidToken))
-                {
+                {                                     
+
                     String guid = guidToken.ToString();
                     EA.Element el = Repository.GetElementByGuid(guid);
+                    
                     if (el != null)
                     {
                         //logger.log("Found element for guid" + guid);

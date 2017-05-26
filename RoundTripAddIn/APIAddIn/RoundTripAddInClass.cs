@@ -58,7 +58,14 @@ namespace RoundTripAddIn
         public static string EA_TYPE_STRING = "String";
         public static string EA_TYPE_CURRENCY = "currency";
         public static string EA_TYPE_ATTRIBUTE = "Attribute";
-        public static string EA_TYPE_ASSOCIATION = "Association";
+        public static
+            
+            
+            
+            
+            
+            
+            string EA_TYPE_ASSOCIATION = "Association";
         public static string EA_TYPE_CLASS = "Class";
         public static string EA_TYPE_OBJECT = "Object";
         public static string EA_TYPE_ENUMERATION = "Enumeration";
@@ -82,7 +89,7 @@ namespace RoundTripAddIn
 
         public static string EA_TAGGEDVALUE_PATTERN = "Pattern";
         public static string EA_TAGGEDVALUE_DEFAULT = "Default";
-
+        
         public static string API_PACKAGE_SCHEMAS = "Schemas";
         public static string API_PACKAGE_SAMPLES = "Samples";
 
@@ -130,6 +137,7 @@ namespace RoundTripAddIn
 
         public static string EXPORT_PACKAGE = "export";
 
+        public static string PROJECT = "project";
         public static string FILENAME = "filename";
         public static string PREFIX = "prefix";
 
