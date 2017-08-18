@@ -142,7 +142,7 @@ namespace RoundTripAddIn
         public static string PREFIX = "prefix";
 
         public static string POPULATION_PATH = "population";
-        public static string POPULATION_PROPERTY_GUID = "guid";
+        public static string POPULATION_PROPERTY_GUID = "id";
         public static string POPULATION_PROPERTY_NAME = "name";
         public static string POPULATION_PROPERTY_NOTES = "notes";
         public static string POPULATION_PROPERTY_TYPE = "type";
@@ -159,9 +159,13 @@ namespace RoundTripAddIn
         public static string MAPPING_PATH = "map";
         public static string MAPPING_PROPERTY_SOURCE = "source";
         public static string MAPPING_PROPERTY_SOURCE_NAME = "sourcename";
+        public static string MAPPING_PROPERTY_SOURCE_CLASS = "sourceclass";
         public static string MAPPING_PROPERTY_TARGET = "target";
         public static string MAPPING_PROPERTY_TARGET_NAME = "targetname";
+        public static string MAPPING_PROPERTY_TARGET_CLASS = "targetclass";
         public static string MAPPING_PROPERTY_TARGET_VALUE = "value";
+        public static string MAPPING_PROPERTY_TYPE = "type";
+        public static string MAPPING_PROPERTY_STEREOTYPE = "stereotype";
 
         ///
         /// Called Before EA starts to check Add-In Exists
@@ -570,6 +574,12 @@ namespace RoundTripAddIn
                 if (samplediagram.Stereotype == RoundTripAddInClass.EA_STEREOTYPE_POPULATIONDIAGRAM)
                 {
                     PopulationManager.exportPopulation(Repository, samplediagram);
+                } else if (samplediagram.Stereotype == RoundTripAddInClass.EA_STEREOTYPE_MAPPINGDIAGRAM)
+                {
+                    MappingManager.exportMapping(Repository, samplediagram);
+                } else if (samplediagram.Stereotype == RoundTripAddInClass.EA_STEREOTYPE_HIERARCHYDIAGRAM)
+                {
+                    HierarchyManager.exportHierarchy(Repository, samplediagram);
                 }
             }            
         }

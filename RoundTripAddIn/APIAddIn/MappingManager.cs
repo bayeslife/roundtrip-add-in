@@ -111,46 +111,92 @@ namespace RoundTripAddIn
             throw new ModelValidationException("Unable to find Object stereotyped as Hierarchy on the diagram");
         }
 
-        static public void parentToJObject(EA.Repository Repository, EA.Diagram diagram, JArray container, IList<int> sampleIds, EA.Element ancestor, EA.Element parent, IList<int> visited)
+        static public void parentToJObject(EA.Repository Repository, EA.Diagram diagram, JArray container, IList<int> sampleIds, EA.Element ancestor, EA.Element parent, IList<int> visited, IList<int> relationsVisited)
         {
             IList<EA.Element> children = new List<EA.Element>();
             visited.Add(parent.ElementID);
             foreach (EA.Connector con in parent.Connectors)
             {
-                EA.Element related = Repository.GetElementByID(con.SupplierID);
-                if (related.ElementID == parent.ElementID)
-                    related = Repository.GetElementByID(con.ClientID);
-                logger.log("Parent" + parent.Name);
-                logger.log("Related" + related.Name);
-                if (!sampleIds.Contains(related.ElementID))
+                if (relationsVisited.Contains(con.ConnectorID))
                     continue;
 
-                if (visited.Contains(related.ElementID))
+                if (!DiagramManager.isVisible(con))
                     continue;
+
+                relationsVisited.Add(con.ConnectorID);
+
+                EA.Element source = parent;                
+                EA.Element target = Repository.GetElementByID(con.SupplierID);
+
+                if (source.ClassifierID != target.ClassifierID)
+                {
+                    if (!sampleIds.Contains(target.ElementID))
+                        continue;
+                }
+
+                if (target.ElementID == parent.ElementID)
+                {
+                    target = Repository.GetElementByID(con.ClientID);
+                }
+
+                if (source.ClassifierID == target.ClassifierID)
+                {
+                    //If they are of the same type we maintain link direction
+                    if(source.ElementID != con.ClientID)
+                    {                        
+                        EA.Element h = source;
+                        source = target;
+                        target = h;
+                    }
+
+                }                             
+
+                String sourceGuid = source.ElementGUID;
+                String sourceName = source.Name;
+                String sourceClass = source.ClassifierName;
+                EA.Element sourceClazz = Repository.GetElementByID(source.ClassifierID);
+                if(sourceClazz!=null)
+                    sourceClass = sourceClazz.Name;
+
+                
+                String targetGuid = target.ElementGUID;
+                String targetName = target.Name;
+                String targetClass = target.ClassifierName;
+                EA.Element  targetClazz = Repository.GetElementByID(target.ClassifierID);
+                if (targetClazz != null)
+                    targetClass = targetClazz.Name;
+                                    
+                                           
+                //if (visited.Contains(related.ElementID))
+                 //   continue;
 
                 JObject jsonClass = new JObject();
-                jsonClass.Add(new JProperty(RoundTripAddInClass.MAPPING_PROPERTY_SOURCE, parent.ElementGUID));
-                jsonClass.Add(new JProperty(RoundTripAddInClass.MAPPING_PROPERTY_SOURCE_NAME, parent.Name));
-                jsonClass.Add(new JProperty(RoundTripAddInClass.MAPPING_PROPERTY_TARGET, related.ElementGUID));
-                jsonClass.Add(new JProperty(RoundTripAddInClass.MAPPING_PROPERTY_TARGET_NAME, related.Name));
-                jsonClass.Add(new JProperty(RoundTripAddInClass.MAPPING_PROPERTY_TARGET_VALUE, 1));
+                jsonClass.Add(new JProperty(RoundTripAddInClass.MAPPING_PROPERTY_SOURCE, sourceGuid));                
+                jsonClass.Add(new JProperty(RoundTripAddInClass.MAPPING_PROPERTY_SOURCE_NAME, sourceName));                
+                jsonClass.Add(new JProperty(RoundTripAddInClass.MAPPING_PROPERTY_SOURCE_CLASS, sourceClass));                
+                jsonClass.Add(new JProperty(RoundTripAddInClass.MAPPING_PROPERTY_TARGET, targetGuid));                
+                jsonClass.Add(new JProperty(RoundTripAddInClass.MAPPING_PROPERTY_TARGET_NAME, targetName));                
+                jsonClass.Add(new JProperty(RoundTripAddInClass.MAPPING_PROPERTY_TARGET_CLASS, targetClass));
+                jsonClass.Add(new JProperty(RoundTripAddInClass.MAPPING_PROPERTY_TARGET_VALUE, "1"));
+                jsonClass.Add(new JProperty(RoundTripAddInClass.MAPPING_PROPERTY_TYPE, con.Type));
+                jsonClass.Add(new JProperty(RoundTripAddInClass.MAPPING_PROPERTY_STEREOTYPE, con.Stereotype));
+
+                logger.log("Source " + source.Name + "-" + sourceClass + " Target " + target.Name + "-" + targetClass);
                 container.Add(jsonClass);
+                
 
-                children.Add(related);
-
-                logger.log("Parent:" + parent.Name + " Child:" + related.Name);
-            }
-
+                children.Add(target);                
+            }            
             //parentsToJObject(Repository, diagram, container, sampleIds, parent, children,visited);
         }
 
-        static public void parentsToJObject(EA.Repository Repository, EA.Diagram diagram, JArray container, IList<int> sampleIds, EA.Element ancestor, IList<EA.Element> parents, IList<int> visited)
+        static public void parentsToJObject(EA.Repository Repository, EA.Diagram diagram, JArray container, IList<int> sampleIds, EA.Element ancestor, IList<EA.Element> parents, IList<int> visited, IList<int> relationsVisited)
         {
             logger.log("Parents :" + parents.Count);
 
             foreach (EA.Element parent in parents)
             {
-                parentToJObject(Repository, diagram, container, sampleIds, ancestor, parent, visited);
+                parentToJObject(Repository, diagram, container, sampleIds, ancestor, parent, visited,relationsVisited);
             }
         }
 
@@ -183,6 +229,7 @@ namespace RoundTripAddIn
             IList<int> visited = new List<int>();
             IList<EA.Element> parents = new List<EA.Element>();
             IList<int> sampleIds = new List<int>();
+            IList<int> relationsVisited = new List<int>();
 
             foreach (EA.Element sample in samples)
             {
@@ -200,7 +247,7 @@ namespace RoundTripAddIn
 
             }
 
-            parentsToJObject(Repository, diagram, container, sampleIds, null, parents, visited);
+            parentsToJObject(Repository, diagram, container, sampleIds, null, parents, visited,relationsVisited);
 
             string msg = prefix + JsonConvert.SerializeObject(container, Newtonsoft.Json.Formatting.Indented) + "\n";
 
@@ -215,6 +262,8 @@ namespace RoundTripAddIn
         {
             try
             {
+                DiagramManager.captureDiagramLinks(diagram);
+
                 if (!diagram.Stereotype.Equals(RoundTripAddInClass.EA_STEREOTYPE_MAPPINGDIAGRAM))
                 {
                     logger.log("exportSample: Ignore diagram that isnt a mapping diagram");

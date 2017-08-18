@@ -101,9 +101,10 @@ namespace RoundTripAddIn
                 confluencedata = diagram.Notes;
             }
             if (confluencedata == null || confluencedata.Length == 0)
-            {                
-                logger.log("Diagram ["+diagram.Name+"] notes field does not specify a <confluence page name>. Default to CanonicalDataModel");
-                confluencedata = "CanonicalDataModel";
+            {
+                //logger.log("Diagram ["+diagram.Name+"] notes field does not specify a <confluence page name>. Default to CanonicalDataModel");
+                //confluencedata = "CanonicalDataModel";
+                return;
             }
             
             {

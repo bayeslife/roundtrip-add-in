@@ -128,21 +128,24 @@ namespace RoundTripAddIn
                             o = convertEATypeToValue(attrType, value);
                             ja.Add(o);
                         }
-                        jsonClass.Add(new JProperty(key, ja));
+                        if(jsonClass.GetValue(key)==null)
+                            jsonClass.Add(new JProperty(key, ja));
                     }
                     else
                     {
                         // Not array so convert and add attribute and formatted value
                         o = convertEATypeToValue(attrType, runstate[key].value);
                         //logger.log("Attr:" + attrType + " " + o.ToString());
-                        jsonClass.Add(new JProperty(key, o));
+                        if (jsonClass.GetValue(key) == null)
+                            jsonClass.Add(new JProperty(key, o));
                     }
                 }
                 else
                 {
                     // No classifier found so add as object serialized as string
                     //logger.log("Attr:" + key + "-" + o.ToString());
-                    jsonClass.Add(new JProperty(key, o));
+                    if (jsonClass.GetValue(key) == null)
+                        jsonClass.Add(new JProperty(key, o));
                 }
             }
         }
