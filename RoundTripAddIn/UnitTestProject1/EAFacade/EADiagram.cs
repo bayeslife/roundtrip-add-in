@@ -13,7 +13,10 @@ namespace UnitTestProject1.EAFacade
 
         public EADiagram()
         {
-            DiagramObjects = new EACollection("DiagramObject");
+            EACollection diaObjs = new EACollection("DiagramObject");
+            diaObjs.setObjectType(EA.ObjectType.otDiagramObject);
+            DiagramObjects = diaObjs;
+            
             DiagramID = EARepository.NextAvailableId();
             DiagramLinks = new EACollection("DiagramLink");
         }

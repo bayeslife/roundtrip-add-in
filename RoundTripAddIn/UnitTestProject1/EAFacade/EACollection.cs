@@ -15,6 +15,8 @@ namespace UnitTestProject1.EAFacade
 
         string type = "";
 
+        EA.ObjectType ot = EA.ObjectType.otElement;
+
         public EACollection(string type)
         {
             this.type = type;
@@ -23,6 +25,11 @@ namespace UnitTestProject1.EAFacade
         public void setParent(int p)
         {
             parent = p;
+        }
+
+        public void setObjectType(EA.ObjectType ot)
+        {
+            this.ot = ot;
         }
        
 
@@ -166,7 +173,7 @@ namespace UnitTestProject1.EAFacade
 
         public EA.ObjectType ObjectType
         {
-            get { throw new NotImplementedException(); }
+            get { return ot; }
         }
 
         public void Refresh()

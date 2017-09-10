@@ -64,6 +64,7 @@
     <Compile Include="FileManager.cs" />
     <Compile Include="MappingManager.cs" />
     <Compile Include="HierarchyManager.cs" />
+    <Compile Include="Profiler.cs" />
     <Compile Include="RepositoryHelper.cs" />
     <Compile Include="RoundTripAddInClass.cs" />
     <Compile Include="Logger.cs" />

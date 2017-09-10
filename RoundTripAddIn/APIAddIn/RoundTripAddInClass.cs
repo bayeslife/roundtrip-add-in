@@ -206,6 +206,7 @@ namespace RoundTripAddIn
             SampleManager.setFileManager(fileManager);
             
             MetaDataManager.setLogger(logger);
+            RepositoryHelper.setLogger(logger);
 
             return "a string";
         }

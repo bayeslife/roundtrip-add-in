@@ -4,6 +4,7 @@ using RoundTripAddIn;
 using UnitTestProject1.EAModels;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Collections.Generic;
 
 using UnitTestProject1.EAFacade;
 
@@ -28,9 +29,10 @@ namespace UnitTestProject1
             EA.Diagram diagram = (EA.Diagram)o;
 
             Assert.AreEqual(2, package.Elements.Count);
-             
+
             //Test
-            JArray jobject = (JArray)PopulationManager.sampleToJObject(EARepository.Repository, diagram)["json"];
+            DiagramCache diagramCache = RepositoryHelper.createDiagramCache(EARepository.Repository, diagram);            
+            JArray jobject = (JArray)PopulationManager.sampleToJObject(EARepository.Repository, diagram,diagramCache)["json"];
 
             Assert.AreEqual(1, jobject.Count);
         }

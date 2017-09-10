@@ -39,9 +39,13 @@ namespace RoundTripAddIn
         public static void syncSample(EA.Repository Repository,EA.Diagram diagram)
         {
             logger.log("Sync Sample");
-            IList<EA.Element> samples = MetaDataManager.diagramSamples(Repository,diagram);
 
-            EA.Element container = container = findContainer(Repository, diagram);
+            DiagramCache diagramCache = RepositoryHelper.createDiagramCache(Repository, diagram);
+            IList<EA.Element> diagramElements = diagramCache.elementsList;
+
+            IList<EA.Element> samples = MetaDataManager.diagramSamples(Repository, diagramElements);
+
+            EA.Element container = container = findContainer(Repository, diagram,diagramElements);
             EA.Element containerClassifierEl = Repository.GetElementByID(container.ClassfierID);
             string containerName = container.Name;
             string containerClassifier = containerClassifierEl.Name;
@@ -197,9 +201,9 @@ namespace RoundTripAddIn
                 return value;
         }
 
-        static EA.Element findContainer(EA.Repository Repository, EA.Diagram diagram)
+        static EA.Element findContainer(EA.Repository Repository, EA.Diagram diagram,IList<EA.Element> diagramElements)
         {
-            IList<EA.Element> samples = MetaDataManager.diagramSamples(Repository, diagram);
+            IList<EA.Element> samples = MetaDataManager.diagramSamples(Repository, diagramElements);
             foreach (EA.Element sample in samples)
             {                
                 if (sample.Stereotype!=null && sample.Stereotype == RoundTripAddInClass.EA_STEREOTYPE_SAMPLE)
@@ -233,15 +237,15 @@ namespace RoundTripAddIn
         }
 
         
-        static public Hashtable sampleToJObject(EA.Repository Repository, EA.Diagram diagram)
+        static public Hashtable sampleToJObject(EA.Repository Repository, EA.Diagram diagram, IList<EA.Element> diagramElements)
         {
             Hashtable result = new Hashtable();
 
-            IList<EA.Element> clazzes = MetaDataManager.diagramClasses(Repository, diagram);
+            IList<EA.Element> clazzes = MetaDataManager.diagramClasses(Repository, diagramElements);
 
-            IList<EA.Element> samples = MetaDataManager.diagramSamples(Repository,diagram);
+            IList<EA.Element> samples = MetaDataManager.diagramSamples(Repository, diagramElements);
 
-            EA.Element root = findContainer(Repository, diagram);
+            EA.Element root = findContainer(Repository, diagram, diagramElements);
                      
             EA.Element rootClassifier = Repository.GetElementByID(root.ClassifierID);
 
@@ -450,7 +454,9 @@ namespace RoundTripAddIn
 
         static public void exportSample(EA.Repository Repository, EA.Diagram diagram)
         {
-            Hashtable ht = sampleToJObject(Repository, diagram);
+            DiagramCache diagramCache = RepositoryHelper.createDiagramCache(Repository, diagram);
+
+            Hashtable ht = sampleToJObject(Repository, diagram, diagramCache.elementsList);
             string sample = (string)ht["sample"];
             string clazz = (string)ht["class"];
             JObject container = (JObject)ht["json"];
@@ -493,8 +499,10 @@ namespace RoundTripAddIn
         /// Validate all object run state keys correspond to classifier attributes
         ///
         static public void validateDiagram(EA.Repository Repository,EA.Diagram diagram)
-        {                        
-            IList<string> messages = diagramValidation(Repository,diagram);
+        {
+            DiagramCache diagramCache = RepositoryHelper.createDiagramCache(Repository, diagram);
+            IList<EA.Element> diagramElements = diagramCache.elementsList;
+            IList<string> messages = diagramValidation(Repository,diagram, diagramElements);
 
             logger.log("**ValidationResults**");
             if(messages!=null)
@@ -506,14 +514,14 @@ namespace RoundTripAddIn
             }                        
         }
 
-        static public IList<string> diagramValidation(EA.Repository Repository, EA.Diagram diagram)
+        static public IList<string> diagramValidation(EA.Repository Repository, EA.Diagram diagram,IList<EA.Element> diagramElements)
         {
             JSchema jschema = null;
             JObject json = null;
             try
             {
                 //logger.log("Validate Sample");
-                json = (JObject)sampleToJObject(Repository, diagram)["json"];
+                json = (JObject)sampleToJObject(Repository, diagram, diagramElements)["json"];
 
                 //logger.log("JObject formed");
             
@@ -546,7 +554,7 @@ namespace RoundTripAddIn
 
                 
             
-                jschema = SchemaManager.schemaToJsonSchema(Repository, schemaDiagram).Value;
+                jschema = SchemaManager.schemaToJsonSchema(Repository, schemaDiagram,diagramElements).Value;
             }
             catch (ModelValidationException ex)
             {

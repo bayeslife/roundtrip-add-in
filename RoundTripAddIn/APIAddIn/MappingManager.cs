@@ -94,11 +94,11 @@ namespace RoundTripAddIn
                 return value;
         }
 
-        static EA.Element findContainer(EA.Repository Repository, EA.Diagram diagram)
+        static EA.Element findContainer(EA.Repository Repository, EA.Diagram diagram,DiagramCache diagramCache)
         {
             logger.log("Finding container for diagram:" + diagram.Name);
 
-            IList<EA.Element> samples = MetaDataManager.diagramSamples(Repository, diagram);
+            IList<EA.Element> samples = MetaDataManager.diagramSamples(Repository, diagramCache.elementsList);
             foreach (EA.Element sample in samples)
             {
                 if (sample.Stereotype != null && sample.Stereotype == RoundTripAddInClass.EA_STEREOTYPE_MAPPING)
@@ -111,7 +111,7 @@ namespace RoundTripAddIn
             throw new ModelValidationException("Unable to find Object stereotyped as Hierarchy on the diagram");
         }
 
-        static public void parentToJObject(EA.Repository Repository, EA.Diagram diagram, JArray container, IList<int> sampleIds, EA.Element ancestor, EA.Element parent, IList<int> visited, IList<int> relationsVisited)
+        static public void parentToJObject(EA.Repository Repository, EA.Diagram diagram, JArray container, IList<int> sampleIds, EA.Element ancestor, EA.Element parent, IList<int> visited, IList<int> relationsVisited,DiagramCache diagramCache)
         {
             IList<EA.Element> children = new List<EA.Element>();
             visited.Add(parent.ElementID);
@@ -126,7 +126,8 @@ namespace RoundTripAddIn
                 relationsVisited.Add(con.ConnectorID);
 
                 EA.Element source = parent;                
-                EA.Element target = Repository.GetElementByID(con.SupplierID);
+                //EA.Element target = Repository.GetElementByID(con.SupplierID);
+                EA.Element target = diagramCache.elementIDHash[con.SupplierID];
 
                 if (source.ClassifierID != target.ClassifierID)
                 {
@@ -136,7 +137,8 @@ namespace RoundTripAddIn
 
                 if (target.ElementID == parent.ElementID)
                 {
-                    target = Repository.GetElementByID(con.ClientID);
+                    //target = Repository.GetElementByID(con.ClientID);
+                    target = diagramCache.elementIDHash[con.ClientID];
                 }
 
                 if (source.ClassifierID == target.ClassifierID)
@@ -154,15 +156,17 @@ namespace RoundTripAddIn
                 String sourceGuid = source.ElementGUID;
                 String sourceName = source.Name;
                 String sourceClass = source.ClassifierName;
-                EA.Element sourceClazz = Repository.GetElementByID(source.ClassifierID);
-                if(sourceClazz!=null)
+                //EA.Element sourceClazz = Repository.GetElementByID(source.ClassifierID);
+                EA.Element sourceClazz = diagramCache.elementIDHash[source.ClassifierID];
+                if (sourceClazz!=null)
                     sourceClass = sourceClazz.Name;
 
                 
                 String targetGuid = target.ElementGUID;
                 String targetName = target.Name;
                 String targetClass = target.ClassifierName;
-                EA.Element  targetClazz = Repository.GetElementByID(target.ClassifierID);
+                //EA.Element  targetClazz = Repository.GetElementByID(target.ClassifierID);
+                EA.Element targetClazz = diagramCache.elementIDHash[target.ClassifierID];
                 if (targetClazz != null)
                     targetClass = targetClazz.Name;
                                     
@@ -190,29 +194,29 @@ namespace RoundTripAddIn
             //parentsToJObject(Repository, diagram, container, sampleIds, parent, children,visited);
         }
 
-        static public void parentsToJObject(EA.Repository Repository, EA.Diagram diagram, JArray container, IList<int> sampleIds, EA.Element ancestor, IList<EA.Element> parents, IList<int> visited, IList<int> relationsVisited)
+        static public void parentsToJObject(EA.Repository Repository, EA.Diagram diagram, JArray container, IList<int> sampleIds, EA.Element ancestor, IList<EA.Element> parents, IList<int> visited, IList<int> relationsVisited,DiagramCache diagramCache)
         {
             logger.log("Parents :" + parents.Count);
 
             foreach (EA.Element parent in parents)
             {
-                parentToJObject(Repository, diagram, container, sampleIds, ancestor, parent, visited,relationsVisited);
+                parentToJObject(Repository, diagram, container, sampleIds, ancestor, parent, visited,relationsVisited,diagramCache);
             }
         }
 
-        static public Hashtable sampleToJObject(EA.Repository Repository, EA.Diagram diagram)
+        static public Hashtable sampleToJObject(EA.Repository Repository, EA.Diagram diagram,DiagramCache diagramCache)
         {
             Hashtable result = new Hashtable();
 
-            IList<EA.Element> clazzes = MetaDataManager.diagramClasses(Repository, diagram);
+            IList<EA.Element> clazzes = MetaDataManager.diagramClasses(Repository, diagramCache.elementsList);
 
-            IList<EA.Element> samples = MetaDataManager.diagramSamples(Repository, diagram);
+            IList<EA.Element> samples = MetaDataManager.diagramSamples(Repository, diagramCache.elementsList);
 
-            EA.Element root = findContainer(Repository, diagram);
+            EA.Element root = findContainer(Repository, diagram, diagramCache);
 
             logger.log("MetaData container:" + root.Name);
 
-            EA.Element rootClassifier = Repository.GetElementByID(root.ClassifierID);
+            EA.Element rootClassifier = diagramCache.elementIDHash[root.ClassifierID];
 
             MetaDataManager.extractDiagramMetaData(result, root);
 
@@ -247,7 +251,7 @@ namespace RoundTripAddIn
 
             }
 
-            parentsToJObject(Repository, diagram, container, sampleIds, null, parents, visited,relationsVisited);
+            parentsToJObject(Repository, diagram, container, sampleIds, null, parents, visited,relationsVisited,diagramCache);
 
             string msg = prefix + JsonConvert.SerializeObject(container, Newtonsoft.Json.Formatting.Indented) + "\n";
 
@@ -264,13 +268,16 @@ namespace RoundTripAddIn
             {
                 DiagramManager.captureDiagramLinks(diagram);
 
+                DiagramCache diagramCache = RepositoryHelper.createDiagramCache(Repository, diagram);
+                //IList<EA.Element> diagramElements = diagramCache.elementsList;
+
                 if (!diagram.Stereotype.Equals(RoundTripAddInClass.EA_STEREOTYPE_MAPPINGDIAGRAM))
                 {
                     logger.log("exportSample: Ignore diagram that isnt a mapping diagram");
                     return;
                 }
 
-                Hashtable ht = sampleToJObject(Repository, diagram);
+                Hashtable ht = sampleToJObject(Repository, diagram,diagramCache);
                 string sample = (string)ht["sample"];
                 string clazz = (string)ht["class"];
                 string container = (string)ht["json"];
@@ -309,90 +316,92 @@ namespace RoundTripAddIn
         ///
         /// Validate all object run state keys correspond to classifier attributes
         ///
-        static public void validateDiagram(EA.Repository Repository, EA.Diagram diagram)
-        {
-            IList<string> messages = diagramValidation(Repository, diagram);
+        //static public void validateDiagram(EA.Repository Repository, EA.Diagram diagram)
+        //{
+        //    IList<string> messages = diagramValidation(Repository, diagram);
 
-            logger.log("**ValidationResults**");
-            if (messages != null)
-            {
-                foreach (string m in messages)
-                {
-                    logger.log(m);
-                }
-            }
-        }
+        //    logger.log("**ValidationResults**");
+        //    if (messages != null)
+        //    {
+        //        foreach (string m in messages)
+        //        {
+        //            logger.log(m);
+        //        }
+        //    }
+        //}
 
-        static public IList<string> diagramValidation(EA.Repository Repository, EA.Diagram diagram)
-        {
-            JSchema jschema = null;
-            JObject json = null;
-            try
-            {
-                //logger.log("Validate Sample");
-                json = (JObject)sampleToJObject(Repository, diagram)["json"];
+        //static public IList<string> diagramValidation(EA.Repository Repository, EA.Diagram diagram)
+        //{
+        //    JSchema jschema = null;
+        //    JObject json = null;
+        //    try
+        //    {
+        //        //logger.log("Validate Sample");
+        //        json = (JObject)sampleToJObject(Repository, diagram)["json"];
 
-                //logger.log("JObject formed");
+        //        //logger.log("JObject formed");
 
-                EA.Package samplePkg = Repository.GetPackageByID(diagram.PackageID);
-                EA.Package samplesPackage = Repository.GetPackageByID(samplePkg.ParentID);
-                EA.Package apiPackage = Repository.GetPackageByID(samplesPackage.ParentID);
+        //        EA.Package samplePkg = Repository.GetPackageByID(diagram.PackageID);
+        //        EA.Package samplesPackage = Repository.GetPackageByID(samplePkg.ParentID);
+        //        EA.Package apiPackage = Repository.GetPackageByID(samplesPackage.ParentID);
 
-                EA.Package schemaPackage = null;
+        //        EA.Package schemaPackage = null;
 
-                foreach (EA.Package p in apiPackage.Packages)
-                {
-                    if (p != null && p.Name.Equals(RoundTripAddInClass.API_PACKAGE_SCHEMAS))
-                    {
-                        schemaPackage = p;
-                    }
-                }
-                if (schemaPackage == null)
-                {
-                    throw new Exception("No Schema package found");
-                }
+        //        foreach (EA.Package p in apiPackage.Packages)
+        //        {
+        //            if (p != null && p.Name.Equals(RoundTripAddInClass.API_PACKAGE_SCHEMAS))
+        //            {
+        //                schemaPackage = p;
+        //            }
+        //        }
+        //        if (schemaPackage == null)
+        //        {
+        //            throw new Exception("No Schema package found");
+        //        }
 
-                EA.Diagram schemaDiagram = null;
-                foreach (EA.Diagram d in schemaPackage.Diagrams)
-                {
-                    if (d.Stereotype != null && d.Stereotype.Equals(RoundTripAddInClass.EA_STEREOTYPE_SCHEMADIAGRAM))
-                    {
-                        schemaDiagram = d;
-                    }
-                }
+        //        EA.Diagram schemaDiagram = null;
+        //        foreach (EA.Diagram d in schemaPackage.Diagrams)
+        //        {
+        //            if (d.Stereotype != null && d.Stereotype.Equals(RoundTripAddInClass.EA_STEREOTYPE_SCHEMADIAGRAM))
+        //            {
+        //                schemaDiagram = d;
+        //            }
+        //        }
 
 
 
-                jschema = SchemaManager.schemaToJsonSchema(Repository, schemaDiagram).Value;
-            }
-            catch (ModelValidationException ex)
-            {
-                return ex.errors.messages;
-            }
+        //        jschema = SchemaManager.schemaToJsonSchema(Repository, schemaDiagram).Value;
+        //    }
+        //    catch (ModelValidationException ex)
+        //    {
+        //        return ex.errors.messages;
+        //    }
 
-            IList<string> messages;
+        //    IList<string> messages;
 
-            if (!json.IsValid(jschema, out messages))
-            {
-                logger.log("Sample is not valid:");
-                return messages;
-            }
-            else
-            {
-                logger.log("Sample is Valid!");
-                return null;
-            }
+        //    if (!json.IsValid(jschema, out messages))
+        //    {
+        //        logger.log("Sample is not valid:");
+        //        return messages;
+        //    }
+        //    else
+        //    {
+        //        logger.log("Sample is Valid!");
+        //        return null;
+        //    }
 
-        }
+        //}
 
 
         public static void syncMapping(EA.Repository Repository, EA.Diagram diagram)
         {
             logger.log("Sync Mapping");
-            IList<EA.Element> samples = MetaDataManager.diagramSamples(Repository, diagram);
+            DiagramCache diagramCache = RepositoryHelper.createDiagramCache(Repository, diagram);
+            IList<EA.Element> diagramElements = diagramCache.elementsList;
+            IList<EA.Element> samples = MetaDataManager.diagramSamples(Repository, diagramElements);
 
-            EA.Element container = container = findContainer(Repository, diagram);
-            EA.Element containerClassifierEl = Repository.GetElementByID(container.ClassfierID);
+            EA.Element container = container = findContainer(Repository, diagram, diagramCache);
+            EA.Element containerClassifierEl = diagramCache.elementIDHash[container.ClassfierID];
             string containerName = container.Name;
             string containerClassifier = containerClassifierEl.Name;
 
@@ -419,14 +428,14 @@ namespace RoundTripAddIn
                 {
                     string fullpath = fileManager.exportPath(containerName, containerClassifier, RoundTripAddInClass.MAPPING_PATH, container.Name);
                     JArray jo = JArray.Parse(File.ReadAllText(fullpath));
-                    sync_mapping(Repository, diagram,container, containerClassifierEl, jo, samplePkg);
+                    sync_mapping(Repository, diagram,container, containerClassifierEl, jo, samplePkg,diagramCache);
                     samplePkg.Update();
                 }
             }
         }
 
 
-        private static void sync_mapping(EA.Repository Repository, EA.Diagram diagram,EA.Element sample, EA.Element classifier, JArray ja, EA.Package pkg)
+        private static void sync_mapping(EA.Repository Repository, EA.Diagram diagram,EA.Element sample, EA.Element classifier, JArray ja, EA.Package pkg,DiagramCache diagramCache)
         {
             logger.log("Syncing JArray:" + sample.Name);
             Dictionary<string, RunState> rs = ObjectManager.parseRunState(sample.RunState);

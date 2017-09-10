@@ -13,54 +13,48 @@ namespace RoundTripAddIn
     public class MetaDataManager
     {
 
+        static Profiler profiler = new Profiler();
         static Logger logger = new Logger();
 
         static public void setLogger(Logger l)
         {
             logger = l;
-        }
-        public static IList<EA.Element> diagramElements(EA.Repository Repository, EA.Diagram diagram)
-        {
-            List<EA.Element> samples = new List<EA.Element>();
-
-            foreach (EA.DiagramObject diagramObject in diagram.DiagramObjects)
-            {
-                EA.Element el = Repository.GetElementByID(diagramObject.ElementID);                
-                samples.Add(el);
-            }
-            return samples;
+            profiler.setLogger(logger);
         }
 
-        static public IList<EA.Element> diagramSamples(EA.Repository Repository,EA.Diagram diagram)
-        {
+
+        //public static DiagramElements diagramElements(EA.Repository Repository, EA.Diagram diagram)
+        //{                       
+        //    DiagramElements diagramElements = RepositoryHelper.getDiagramElements(Repository, diagram.DiagramObjects);
+            
+        //    return diagramElements;
+        //}
+
+        static public IList<EA.Element> diagramSamples(EA.Repository Repository,IList<EA.Element> elements)
+        {                        
             List<EA.Element> samples = new List<EA.Element>();             
-            foreach (EA.DiagramObject diagramObject in diagram.DiagramObjects)
-            {
-                EA.Element el = Repository.GetElementByID(diagramObject.ElementID);
+            foreach (EA.Element el in elements)
+            {                                
                 if (el.Type.Equals(RoundTripAddInClass.EA_TYPE_OBJECT))
                     samples.Add(el);
-            }
+            }            
             return samples;
         }
 
-        public static IList<EA.Element> diagramClasses(EA.Repository Repository,EA.Diagram diagram)
+        public static IList<EA.Element> diagramClasses(EA.Repository Repository,IList<EA.Element> elements)
         {
             List<EA.Element> samples = new List<EA.Element>();
-            
-            foreach (EA.DiagramObject diagramObject in diagram.DiagramObjects)
+            foreach (EA.Element el in elements)
             {
-                EA.Element el = Repository.GetElementByID(diagramObject.ElementID);
-                if (el.Type == null)
-                    continue;
                 if (el.Type.Equals(RoundTripAddInClass.EA_TYPE_CLASS) || el.Type.Equals(RoundTripAddInClass.EA_TYPE_ENUMERATION))
                     samples.Add(el);
             }
-            return samples;
+            return samples;            
         }
 
 
         public static IList<EA.Element> diagramElements(EA.Repository Repository)
-        {
+        {            
             List<EA.Element> samples = new List<EA.Element>();
             EA.Diagram diagram = null;
             if (Repository.GetContextItemType() == EA.ObjectType.otDiagram)

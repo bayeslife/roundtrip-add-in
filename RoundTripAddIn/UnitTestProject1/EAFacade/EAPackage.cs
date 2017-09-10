@@ -20,6 +20,7 @@ namespace UnitTestProject1.EAFacade
             Packages = p;
 
             EACollection d = new EACollection("Diagram");
+            d.setObjectType(EA.ObjectType.otDiagram);
             d.setParent(PackageID);
             Diagrams = d;
 

@@ -109,7 +109,7 @@ namespace RoundTripAddIn
         }
 
 
-        static public KeyValuePair<string, JSchema> schemaToJsonSchema(EA.Repository Repository, EA.Diagram diagram)
+        static public KeyValuePair<string, JSchema> schemaToJsonSchema(EA.Repository Repository, EA.Diagram diagram, IList<EA.Element> diagramElements)
             /* Exports schema diagram to JsonSchema.
              * Schema root can be defined two ways:
              *  1. Class identified by link from 'Object' (Not class or enum). Typically this will be an object inherited from 'TypeForResource'
@@ -126,7 +126,7 @@ namespace RoundTripAddIn
             EA.Package schemaPackage = Repository.GetPackageByID(diagram.PackageID);
             EA.Package apiPackage = Repository.GetPackageByID(schemaPackage.ParentID);
 
-            IList<EA.Element> classes = MetaDataManager.diagramClasses(Repository, diagram);
+            IList<EA.Element> classes = MetaDataManager.diagramClasses(Repository, diagramElements);
 
             Dictionary<string, JSchema> schemas = new Dictionary<string, JSchema>();
 
@@ -134,7 +134,7 @@ namespace RoundTripAddIn
             JSchema container = null;
 
             List<int> possibleRoots = new List<int>();
-            IList<EA.Element> objects = MetaDataManager.diagramSamples(Repository, diagram);
+            IList<EA.Element> objects = MetaDataManager.diagramSamples(Repository, diagramElements);
             foreach (EA.Element obj in objects)
             {
                 foreach (EA.Connector conn in obj.Connectors)
@@ -476,7 +476,10 @@ namespace RoundTripAddIn
                 return;
             }
 
-            KeyValuePair<string, JSchema> container = schemaToJsonSchema(Repository, diagram);
+            DiagramCache diagramCache = RepositoryHelper.createDiagramCache(Repository, diagram);
+            IList<EA.Element> diagramElements = diagramCache.elementsList;
+
+            KeyValuePair<string, JSchema> container = schemaToJsonSchema(Repository, diagram,diagramElements);
 
             if (container.Value != null)
             {
@@ -565,8 +568,11 @@ namespace RoundTripAddIn
 
             DiagramManager.captureDiagramLinks(diagram);
 
+            DiagramCache diagramCache = RepositoryHelper.createDiagramCache(Repository, diagram);
+            IList<EA.Element> diagramElements = diagramCache.elementsList; ;
+
             Dictionary<int,string> possibleRoots = new Dictionary<int,string>();
-            IList<EA.Element> objects = MetaDataManager.diagramSamples(Repository, diagram);
+            IList<EA.Element> objects = MetaDataManager.diagramSamples(Repository, diagramElements);
             foreach (EA.Element obj in objects)
             {
                 //logger.log("Found Object:" + obj.ElementID);
@@ -582,7 +588,7 @@ namespace RoundTripAddIn
             }
 
             EA.Element clazz = null;
-            IList<EA.Element> clazzes = MetaDataManager.diagramClasses(Repository, diagram);
+            IList<EA.Element> clazzes = MetaDataManager.diagramClasses(Repository, diagramElements);
             foreach (EA.Element diaclazz in clazzes)
             {                
                 if (possibleRoots.ContainsKey(diaclazz.ElementID))
@@ -633,7 +639,7 @@ namespace RoundTripAddIn
 
             //logger.log("Added diagram:" + newdia.DiagramID);
 
-            IList<EA.Element> diagramClasses = MetaDataManager.diagramClasses(Repository, diagram);
+            IList<EA.Element> diagramClasses = MetaDataManager.diagramClasses(Repository, diagramElements);
             List<int> diagramElementIds = new List<int>();
             foreach (EA.Element de in diagramClasses) diagramElementIds.Add(de.ElementID);
 
@@ -1042,10 +1048,13 @@ namespace RoundTripAddIn
             {
                 //logger.log("Validate Schemas");
 
-                IList<EA.Element> classes = MetaDataManager.diagramClasses(Repository, diagram);
+
+                DiagramCache diagramCache = RepositoryHelper.createDiagramCache(Repository, diagram);
+                IList<EA.Element> diagramElements = diagramCache.elementsList;
+                IList<EA.Element> classes = MetaDataManager.diagramClasses(Repository, diagramElements);
                 List<int> possibleRoots = new List<int>();
 
-                IList<EA.Element> objects = MetaDataManager.diagramSamples(Repository, diagram);
+                IList<EA.Element> objects = MetaDataManager.diagramSamples(Repository, diagramElements);
 
                 EA.Element root = null;
                 foreach (EA.Element obj in objects)

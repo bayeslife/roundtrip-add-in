@@ -353,7 +353,17 @@ namespace UnitTestProject1.EAFacade
 
         public EA.Collection GetElementSet(string IDList, int Unused)
         {
-            throw new NotImplementedException();
+            EACollection col = new EACollection("object");
+            string[] elementIds = IDList.Split(',');
+            foreach(string el in elementIds)
+            {
+                int eId = Int32.Parse(el);
+                if (!col.collection.ContainsKey(el))
+                {
+                    col.collection.Add(el, elements[eId]);
+                }                
+            }
+            return col;
         }
 
         public EA.Collection GetElementsByQuery(string QueryName, string SearchTerm)
