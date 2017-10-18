@@ -33,41 +33,81 @@ namespace RoundTripAddIn
         }
 
 
-        static void cacheDiagramElements(EA.Repository repository,EA.Collection collection,DiagramCache diagramCache)
+        static void cacheDiagramElements(EA.Repository repository, EA.Collection collection, DiagramCache diagramCache)
         {
-            diagramCache.elementsList = new List<EA.Element>();         
-            Object o;            
+            diagramCache.elementsList = new List<EA.Element>();
+            Object o;
+            EA.Element e;
             if (collection.Count == 0)
                 return;
-                      
-            int eId;
-            StringBuilder sb = new StringBuilder();
-            for(short i = 0; i < collection.Count - 1; i++)
-            {
-                o = collection.GetAt(i);
+
+            int eId, pkgId;
+            EA.Collection elements = null;
+            StringBuilder sb;
+            {                
+                sb = new StringBuilder();
+                for (short i = 0; i < collection.Count - 1; i++)
+                {
+                    o = collection.GetAt(i);
+                    eId = ((EA.DiagramObject)o).ElementID;
+                    sb.Append(eId);
+                    sb.Append(",");
+                }
+                o = collection.GetAt((short)(collection.Count - 1));
                 eId = ((EA.DiagramObject)o).ElementID;
                 sb.Append(eId);
-                sb.Append(",");
+                String elementsString = sb.ToString();
+                //logger.log("DiagramObjectIds"+sb.ToString());
+                //logger.log("Getting elements:"+elementsString);
+
+                elements = repository.GetElementSet(elementsString, 0);
             }
-            o = collection.GetAt((short)(collection.Count-1));
-            eId = ((EA.DiagramObject)o).ElementID;
-            sb.Append(eId);
-            String elementsString = sb.ToString();
-            //logger.log("DiagramObjectIds"+sb.ToString());
-            logger.log("Getting elements");
-            
-            EA.Collection elements = repository.GetElementSet(elementsString, 0);
+            sb = new StringBuilder();
+
             if (elements != null)
             {
                 foreach (EA.Element el in elements)
                 {
                     diagramCache.elementsList.Add(el);
                     if (!diagramCache.elementIDHash.ContainsKey(el.ElementID))
-                         diagramCache.elementIDHash.Add(el.ElementID, el);
+                        diagramCache.elementIDHash.Add(el.ElementID, el);
                     if (!diagramCache.elementGuidHash.ContainsKey(el.ElementGUID))
                         diagramCache.elementGuidHash.Add(el.ElementGUID, el);
                 }
             }
+
+            //for (short i = 0; i < elements.Count - 1; i++)                
+            //{
+            //    e = elements.GetAt(i);
+            //    sb.Append(e.PackageID);
+            //    sb.Append(",");
+            //}
+            //e = elements.GetAt((short)(elements.Count - 1));
+            //sb.Append(e.PackageID);
+            //{                
+            //    String elementsString = sb.ToString();
+            //    logger.log("Getting element packages:" + elementsString);
+            //    EA.Collection pelements = repository.GetElementSet(elementsString, 0);
+            //    logger.log("Got element packages"+pelements.Count);
+            //    if (pelements != null)
+            //    {
+            //        for (short i = 0; i < pelements.Count - 1; i++)
+            //        {
+            //            logger.log("h:" + i);
+            //            //Object o2 = pelements.GetAt(i);                        
+            //            logger.log("PKG");
+            //            //if (!diagramCache.elementIDHash.ContainsKey(e.ElementID))
+            //            //    diagramCache.elementIDHash.Add(e.ElementID, e);
+            //            //if (!diagramCache.elementGuidHash.ContainsKey(e.ElementGUID))
+            //            //    diagramCache.elementGuidHash.Add(e.ElementGUID, e);
+            //        }
+            //    }
+            //}            
+        }
+
+        static void populateCache(EA.Collection elements,DiagramCache diagramCache)
+        {
+           
         }
 
         
@@ -94,7 +134,7 @@ namespace RoundTripAddIn
                     sb.Append(",");
                 }                
             }
-            logger.log("Getting classifiers"+ sb.ToString());
+            //logger.log("Getting classifiers"+ sb.ToString());
             
             String classifiersString = sb.ToString();
             if (classifiersString.Length == 0)
@@ -104,6 +144,7 @@ namespace RoundTripAddIn
             int elementId;
             for (short i = 0; i < classifierCollection.Count; i++)
             {
+                //logger.log("Get classifier" + i);
                 o = classifierCollection.GetAt(i);
                 EA.Element element = (EA.Element)o;
                 elementId = element.ElementID;
@@ -118,12 +159,35 @@ namespace RoundTripAddIn
             }                        
         }
 
-    
+
+        static void cacheDiagramPackages(EA.Repository repository, DiagramCache diagramCache)
+        {
+            Object o;
+            if (diagramCache.elementsList.Count == 0)
+                return;
+            
+            StringBuilder sb = new StringBuilder();
+            for (short i = 0; i < diagramCache.elementsList.Count; i++)
+            {
+                o = diagramCache.elementsList[i];
+                EA.Element el = (EA.Element)o;
+                if (!diagramCache.packageIDHash.ContainsKey(el.PackageID))
+                {
+                    //logger.log("Get PKG" + el.PackageID);
+                    EA.Package pkg = repository.GetPackageByID(el.PackageID);
+                    diagramCache.packageIDHash.Add(el.PackageID, pkg);
+                }
+                
+            }            
+        }
+
+
         public static DiagramCache createDiagramCache(EA.Repository repository, EA.Diagram diagram)
         {
             DiagramCache result = new DiagramCache();           
             cacheDiagramElements(repository, diagram.DiagramObjects,result);
             cacheDiagramClassifiers(repository, result);
+            cacheDiagramPackages(repository, result);
             logger.log(result.elementsList.Count + ":" + result.elementIDHash.Count);
             return result;
         }      
@@ -142,6 +206,9 @@ namespace RoundTripAddIn
         //A map of the elements, classifiers, packages making up the diagram
         public IDictionary<int, EA.Element> elementIDHash { get; set; }
 
+        //A map of the  packages making up the diagram
+        public IDictionary<int, EA.Package> packageIDHash { get; set; }
+
         //A map by guid of the elements, classifiers, packages making up the diagram
         public IDictionary<String, EA.Element> elementGuidHash { get; set; }
 
@@ -149,6 +216,7 @@ namespace RoundTripAddIn
         {
             elementsList = new List<EA.Element>();
             elementIDHash = new Dictionary<int, EA.Element>();
+            packageIDHash = new Dictionary<int, EA.Package>();
             elementGuidHash = new Dictionary<String, EA.Element>();
         }
 

@@ -418,7 +418,9 @@ namespace UnitTestProject1.EAFacade
 
         public EA.Package GetPackageByID(int PackageID)
         {
-            return packages[PackageID];
+            if(packages.ContainsKey(PackageID))
+                return packages[PackageID];
+            return null;
         }
 
         public EA.Project GetProjectInterface()

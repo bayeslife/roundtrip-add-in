@@ -146,6 +146,7 @@ namespace RoundTripAddIn
         public static string POPULATION_PROPERTY_NAME = "name";
         public static string POPULATION_PROPERTY_NOTES = "notes";
         public static string POPULATION_PROPERTY_TYPE = "type";
+        public static string POPULATION_PROPERTY_PACKAGE = "package";
 
         public static string HIERARCHY_LEVEL = "level";
         public static string HIERARCHY_PATH = "hierarchy";
@@ -207,6 +208,7 @@ namespace RoundTripAddIn
             
             MetaDataManager.setLogger(logger);
             RepositoryHelper.setLogger(logger);
+            ObjectManager.setLogger(logger);
 
             return "a string";
         }

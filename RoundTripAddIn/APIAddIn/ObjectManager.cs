@@ -10,6 +10,7 @@ using Newtonsoft.Json.Schema;
 
 namespace RoundTripAddIn
 {
+   
     public class RunState
     {
         public string key;
@@ -19,6 +20,12 @@ namespace RoundTripAddIn
     /* This class deals with serialization of UML Object diagrams to Json */
     public class ObjectManager
     {
+
+        static Logger logger = new Logger();
+        static public void setLogger(Logger l)
+        {
+            logger = l;
+        }
 
 
         static public Dictionary<string, RunState> parseRunState(String runstate)
@@ -149,9 +156,20 @@ namespace RoundTripAddIn
                 }
             }
         }
+    
+        public static void addTagsToJson(EA.Element el, JObject jsonClass)
+        {            
+            EA.Collection tagvalues = el.TaggedValues;
+            foreach (EA.TaggedValue tv in tagvalues)
+            {
+                logger.log(tv.Name + ":" + tv.Value);
+                if (jsonClass.GetValue(tv.Name) == null)
+                    jsonClass.Add(new JProperty(tv.Name, tv.Value));
+            }        
+        }        
 
 
-    static public object convertEATypeToValue(string t, string value)
+        static public object convertEATypeToValue(string t, string value)
     {
         if (t.Equals(RoundTripAddInClass.EA_TYPE_NUMBER) || t.Equals(RoundTripAddInClass.EA_TYPE_FLOAT))
         {

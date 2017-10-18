@@ -35,7 +35,6 @@ namespace RoundTripAddIn
         }
 
        
-
         public static void syncPopulation(EA.Repository Repository, EA.Diagram diagram)
         {
             logger.log("Sync Population");
@@ -101,7 +100,7 @@ namespace RoundTripAddIn
                     if (el != null)
                     {
                         //logger.log("Found element for guid" + guid);
-                        sync_population(Repository, el, classifier, jo, pkg,diagramCache);
+                        sync_population_taggedvalue(Repository, el, classifier, jo, pkg,diagramCache);
                     } else
                     {
                         logger.log("No element for guid" + guid);
@@ -111,14 +110,14 @@ namespace RoundTripAddIn
                     logger.log("No guid, adding element" + jo.ToString());
                     EA.Element el = pkg.Elements.AddNew("", "Object");
                     logger.log("No guid, adding element" + jo.ToString());
-                    sync_population(Repository, el, classifier, jo, pkg,diagramCache);
+                    sync_population_taggedvalue(Repository, el, classifier, jo, pkg,diagramCache);
 
                 }
             }
         }
 
 
-        private static void sync_population(EA.Repository Repository, EA.Element sample, EA.Element classifier, JObject jo,EA.Package pkg,DiagramCache diagramCache)
+        private static void sync_population_runstate(EA.Repository Repository, EA.Element sample, EA.Element classifier, JObject jo,EA.Package pkg,DiagramCache diagramCache)
         {
             logger.log("Syncing JObject:" + sample.Name);
             Dictionary<string, RunState> rs = ObjectManager.parseRunState(sample.RunState);
@@ -218,8 +217,75 @@ namespace RoundTripAddIn
             //}
         }
 
+        private static void sync_population_taggedvalue(EA.Repository Repository, EA.Element sample, EA.Element classifier, JObject jo, EA.Package pkg, DiagramCache diagramCache)
+        {
+            logger.log("Syncing JObject:" + sample.Name);
+            EA.Collection taggedValues = sample.TaggedValues;            
 
-        
+            sample.ClassifierID = classifier.ElementID;
+
+            foreach (JProperty p in jo.Properties())
+            {
+
+                if (p.Name == RoundTripAddInClass.POPULATION_PROPERTY_GUID)
+                {
+                    continue;
+                }
+                if (p.Name == RoundTripAddInClass.POPULATION_PROPERTY_PACKAGE)
+                {
+                    continue;
+                }
+                if (p.Name == RoundTripAddInClass.POPULATION_PROPERTY_NAME)
+                {
+                    sample.Name = p.Value.ToString();
+                    continue;
+                }
+                if (p.Name == RoundTripAddInClass.POPULATION_PROPERTY_NOTES)
+                {
+                    sample.Notes = p.Value.ToString();
+                    continue;
+                }
+
+
+                if (p.Name == RoundTripAddInClass.POPULATION_PROPERTY_TYPE)
+                {
+                    string classifierName = p.Value.ToString();
+                    EA.Element clazz = RepositoryHelper.queryClassifier(Repository, classifierName);
+                    if (clazz != null)
+                    {
+                        sample.ClassifierID = clazz.ElementID;
+                        continue;
+                    }
+
+
+                }                
+                if (p.Value.Type != JTokenType.Object && p.Value.Type != JTokenType.Array)
+                {
+                    //logger.log("Handling Property:" + p.Name);
+
+                    EA.TaggedValue r = taggedValues.GetByName(p.Name);
+
+                    if (r!=null)
+                    {
+                        //logger.log("Existing Tag");                        
+                        r.Value = p.Value.ToString();
+                        r.Update();
+                    }
+                    else
+                    {
+                        //logger.log("New Tag");                                                
+                        EA.TaggedValue tv = sample.TaggedValues.AddNew(p.Name, RoundTripAddInClass.EA_TYPE_STRING);
+                        tv.Value = p.Value.ToString();
+                        tv.Update();                                             
+                    }
+                                        
+                }
+            }                        
+            sample.Update();
+        }
+
+
+
 
         static EA.Element findContainer(EA.Repository Repository, EA.Diagram diagram, IList<EA.Element> diagramElements)
         {
@@ -239,12 +305,6 @@ namespace RoundTripAddIn
         }
 
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="Repository"></param>
-        /// <param name="diagram"></param>
-        /// <returns></returns>
         static public Hashtable sampleToJObject(EA.Repository Repository, EA.Diagram diagram,DiagramCache diagramElements)
         {
             Hashtable result = new Hashtable();
@@ -268,12 +328,11 @@ namespace RoundTripAddIn
             string containerName = root.Name;
             string containerClassifier = rootClassifier.Name;
 
-
             //instances.Add(root.ElementID, container);
 
             foreach (EA.Element sample in samples)
             {
-                logger.log("Sample Name:" + sample.Name);
+                //logger.log("Sample Name:" + sample.Name);
 
                 if (sample.Stereotype == RoundTripAddInClass.EA_STEREOTYPE_POPULATION)
                     continue;
@@ -290,6 +349,8 @@ namespace RoundTripAddIn
                     logger.log("Classifier is null");
                 }
 
+                EA.Package package = diagramElements.packageIDHash[sample.PackageID];
+
                 JObject jsonClass = null;
 
                 {
@@ -297,15 +358,17 @@ namespace RoundTripAddIn
                     jsonClass.Add(new JProperty(RoundTripAddInClass.POPULATION_PROPERTY_GUID, sample.ElementGUID));
                     jsonClass.Add(new JProperty(RoundTripAddInClass.POPULATION_PROPERTY_NAME, sample.Name));
                     jsonClass.Add(new JProperty(RoundTripAddInClass.POPULATION_PROPERTY_NOTES, sample.Notes));
-                    if(clazz!=null)
+                    jsonClass.Add(new JProperty(RoundTripAddInClass.POPULATION_PROPERTY_PACKAGE, package.Name));
+                    if (clazz!=null)
                         jsonClass.Add(new JProperty(RoundTripAddInClass.POPULATION_PROPERTY_TYPE, clazz.Name));
 
                     container.Add(jsonClass);
                 }
 
                 string rs = sample.RunState;
-
-                ObjectManager.addRunStateToJson(rs, jsonClass);         
+                
+                ObjectManager.addRunStateToJson(rs, jsonClass);
+                ObjectManager.addTagsToJson(sample, jsonClass);
             }
 
             logger.log("Export container:" + containerName);
