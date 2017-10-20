@@ -116,6 +116,7 @@ namespace RoundTripAddIn
             String type = "";
             if (parent.ClassifierID != 0)
             {
+                //logger.log("Get Parent Classifier");
                 EA.Element classifier = diagramCache.elementIDHash[parent.ClassifierID];
                 type = classifier.Name;
             }                
@@ -131,7 +132,8 @@ namespace RoundTripAddIn
             else
                 jsonClass.Add(new JProperty(RoundTripAddInClass.HIERARCHY_PROPERTY_PARENT, "null"));
             container.Add(jsonClass);
-
+            
+            ObjectManager.addTagsToJson(parent, jsonClass);
             ObjectManager.addRunStateToJson(parent.RunState, jsonClass);
 
             IList<EA.Element> children = new List<EA.Element>();
@@ -141,15 +143,12 @@ namespace RoundTripAddIn
                 if (!DiagramManager.isVisible(con)) //skip not visiable
                     continue;
 
-
-                 EA.Element related = diagramCache.elementIDHash[con.SupplierID];
-                if(related.ElementID== parent.ElementID)
-                {
-                    related = diagramCache.elementIDHash[con.ClientID];                    
-                }
+                EA.Element related = DiagramManager.getVisibleRelatedElement(Repository,parent, con, diagramCache);
+                if (related == null)
+                    continue;
                     
-                logger.log("Parent" + parent.Name);
-                logger.log("Related"+ related.Name);
+                //logger.log("Parent" + parent.Name);
+                //logger.log("Related"+ related.Name);
                 if (!sampleIds.Contains(related.ElementID))
                     continue;
 
@@ -166,8 +165,7 @@ namespace RoundTripAddIn
 
         static public void parentsToJObject(EA.Repository Repository, EA.Diagram diagram, JArray container,IList<int> sampleIds,EA.Element ancestor,IList<EA.Element> parents,IList<int> visited,int depth,DiagramCache diagramCache)
         {
-            logger.log("Parents :" + parents.Count);
-            
+            //logger.log("Parents :" + parents.Count);            
             foreach (EA.Element parent in parents)
             {
                 parentToJObject(Repository, diagram, container, sampleIds, ancestor,parent, visited,depth,diagramCache);

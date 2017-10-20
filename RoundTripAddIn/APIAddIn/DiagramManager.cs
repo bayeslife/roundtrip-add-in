@@ -16,7 +16,7 @@ namespace RoundTripAddIn
         static Logger logger = new Logger();
         static FileManager fileManager = new FileManager(null);
 
-        static List<int> diagramLinks = null;
+        static HashSet<int> diagramLinks = null;
 
         static public void setLogger(Logger l)
         {
@@ -29,22 +29,50 @@ namespace RoundTripAddIn
         }
 
         static public bool isVisible(EA.Connector con)
-        {
+        {                        
             if (diagramLinks != null)
+            {                                
                 return diagramLinks.Contains(con.ConnectorID);
-            return true;
+            }                
+            return false;
         }
 
         static public void captureDiagramLinks(EA.Diagram diagram)
         {
-            diagramLinks = new List<int>();
+            diagramLinks = new HashSet<int>();
             foreach (object link in diagram.DiagramLinks)
             {
                 EA.DiagramLink l = (EA.DiagramLink)link;
                 if (!l.IsHidden)
+                {
                     diagramLinks.Add(l.ConnectorID);
+                    //logger.log("Visible Connector" + l.ConnectorID);
+                }
             }
-            logger.log("Number of diagram links:" + diagramLinks.Count);
+            //logger.log("Number of diagram links:" + diagramLinks.Count);            
+        }
+
+        static public EA.Element getVisibleRelatedElement(EA.Repository repository,EA.Element source,EA.Connector con,DiagramCache diagramCache)
+        {
+            //logger.log("Visible Connection:" + con.Name);
+
+            //logger.log("Check Supplier" + con.SupplierID);
+
+            //EA.Element sup = repository.GetElementByID(con.SupplierID);
+            //logger.log(sup.Name);
+            EA.Element related = null;
+            if (diagramCache.elementIDHash.ContainsKey(con.SupplierID))
+            {
+                related = diagramCache.elementIDHash[con.SupplierID];
+            }
+            if (related == null)//Found issue that links may be visible while 
+                return null;
+            if (related != null && related.ElementID == source.ElementID && diagramCache.elementIDHash.ContainsKey(con.ClientID))
+            {
+                //logger.log("Check Client");
+                related = diagramCache.elementIDHash[con.ClientID];
+            }
+            return related;
         }
 
         static public List<string> queryAPIDiagrams(EA.Repository Repository)
