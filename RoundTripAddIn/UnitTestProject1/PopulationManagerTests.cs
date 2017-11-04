@@ -30,8 +30,10 @@ namespace UnitTestProject1
 
             Assert.AreEqual(2, package.Elements.Count);
 
+            DiagramCache diagramCache = new DiagramCache();
+
             //Test
-            DiagramCache diagramCache = RepositoryHelper.createDiagramCache(EARepository.Repository, diagram);            
+            RepositoryHelper.createDiagramCache(EARepository.Repository, diagram,diagramCache);            
             JArray jobject = (JArray)PopulationManager.sampleToJObject(EARepository.Repository, diagram,diagramCache)["json"];
 
             Assert.AreEqual(1, jobject.Count);

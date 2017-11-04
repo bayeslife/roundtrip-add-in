@@ -94,23 +94,6 @@ namespace RoundTripAddIn
                 return value;
         }
 
-        static EA.Element findContainer(EA.Repository Repository, EA.Diagram diagram,DiagramCache diagramCache)
-        {
-            logger.log("Finding container for diagram:" + diagram.Name);
-
-            IList<EA.Element> samples = MetaDataManager.diagramSamples(Repository, diagramCache.elementsList);
-            foreach (EA.Element sample in samples)
-            {
-                if (sample.Stereotype != null && sample.Stereotype == RoundTripAddInClass.EA_STEREOTYPE_HIERARCHY)
-                {
-                    logger.log("Hierachy is identified by Hierarchy stereotype");
-
-                    return sample;
-                }
-            }
-            throw new ModelValidationException("Unable to find Object stereotyped as Hierarchy on the diagram");
-        }
-
         static public void parentToJObject(EA.Repository Repository, EA.Diagram diagram, JArray container, IList<int> sampleIds, EA.Element ancestor,EA.Element parent, IList<int> visited,int depth,DiagramCache diagramCache)
         {
             String type = "";
@@ -133,8 +116,8 @@ namespace RoundTripAddIn
                 jsonClass.Add(new JProperty(RoundTripAddInClass.HIERARCHY_PROPERTY_PARENT, "null"));
             container.Add(jsonClass);
             
-            ObjectManager.addTagsToJson(parent, jsonClass);
-            ObjectManager.addRunStateToJson(parent.RunState, jsonClass);
+            //ObjectManager.addTagsToJson(parent, jsonClass);
+            //ObjectManager.addRunStateToJson(parent.RunState, jsonClass);
 
             IList<EA.Element> children = new List<EA.Element>();
             visited.Add(parent.ElementID);
@@ -184,7 +167,7 @@ namespace RoundTripAddIn
             //DiagramElements diagramCache = RepositoryHelper.getDiagramElements(Repository, diagram.DiagramObjects);
             //IList<EA.Element> diagramElements = diagramCache.elementsList;
 
-            EA.Element root = findContainer(Repository, diagram, diagramCache);            
+            EA.Element root = MetaDataManager.findContainer(Repository, diagram, diagramCache,RoundTripAddInClass.EA_STEREOTYPE_HIERARCHY);            
 
             MetaDataManager.extractDiagramMetaData(result, root);
 
@@ -241,7 +224,7 @@ namespace RoundTripAddIn
             return result;
         }
 
-        static public void exportHierarchy(EA.Repository Repository, EA.Diagram diagram)
+        static public void exportHierarchy(EA.Repository Repository, EA.Diagram diagram,DiagramCache diagramCache)
         {              
             try
             {
@@ -253,7 +236,7 @@ namespace RoundTripAddIn
 
                 DiagramManager.captureDiagramLinks(diagram);
 
-                DiagramCache diagramCache = RepositoryHelper.createDiagramCache(Repository, diagram);                
+                RepositoryHelper.createDiagramCache(Repository, diagram,diagramCache);                
                 Hashtable ht = sampleToJObject(Repository, diagram,diagramCache);
                 
                 string sample = (string)ht["sample"];
@@ -364,16 +347,16 @@ namespace RoundTripAddIn
         //}
 
 
-        public static void syncHierarchy(EA.Repository Repository, EA.Diagram diagram)
+        public static void syncHierarchy(EA.Repository Repository, EA.Diagram diagram,DiagramCache diagramCache)
         {
             logger.log("Sync Hierarchy");
 
-            DiagramCache diagramCache = RepositoryHelper.createDiagramCache(Repository, diagram);
+            RepositoryHelper.createDiagramCache(Repository, diagram,diagramCache);
             //IList<EA.Element> diagramElements = diagramCache.elementsList;
 
             IList<EA.Element> samples = MetaDataManager.diagramSamples(Repository, diagramCache.elementsList);
 
-            EA.Element container = container = findContainer(Repository, diagram, diagramCache);
+            EA.Element container = container = MetaDataManager.findContainer(Repository, diagram, diagramCache,RoundTripAddInClass.EA_STEREOTYPE_HIERARCHY);
             EA.Element containerClassifierEl = diagramCache.elementIDHash[container.ClassfierID];
             string containerName = container.Name;
             string containerClassifier = containerClassifierEl.Name;

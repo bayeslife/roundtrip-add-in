@@ -464,7 +464,7 @@ namespace RoundTripAddIn
 
      
 
-        static public void exportSchema(EA.Repository Repository, EA.Diagram diagram)
+        static public void exportSchema(EA.Repository Repository, EA.Diagram diagram,DiagramCache diagramCache)
         {
             //logger.log("Export Schemas");
 
@@ -476,7 +476,7 @@ namespace RoundTripAddIn
                 return;
             }
 
-            DiagramCache diagramCache = RepositoryHelper.createDiagramCache(Repository, diagram);
+            RepositoryHelper.createDiagramCache(Repository, diagram,diagramCache);
             IList<EA.Element> diagramElements = diagramCache.elementsList;
 
             KeyValuePair<string, JSchema> container = schemaToJsonSchema(Repository, diagram,diagramElements);
@@ -534,7 +534,7 @@ namespace RoundTripAddIn
         //}
 
 
-        static public EA.Package generateSample(EA.Repository Repository)
+        static public EA.Package generateSample(EA.Repository Repository,DiagramCache diagramCache)
         {
             string nameOfGenerated = "Generated";
 
@@ -568,7 +568,7 @@ namespace RoundTripAddIn
 
             DiagramManager.captureDiagramLinks(diagram);
 
-            DiagramCache diagramCache = RepositoryHelper.createDiagramCache(Repository, diagram);
+            RepositoryHelper.createDiagramCache(Repository, diagram,diagramCache);
             IList<EA.Element> diagramElements = diagramCache.elementsList; ;
 
             Dictionary<int,string> possibleRoots = new Dictionary<int,string>();
@@ -1042,14 +1042,14 @@ namespace RoundTripAddIn
             return true;
         }
 
-        static public void validateDiagram(EA.Repository Repository,EA.Diagram diagram)
+        static public void validateDiagram(EA.Repository Repository,EA.Diagram diagram,DiagramCache diagramCache)
         {
             try
             {
                 //logger.log("Validate Schemas");
 
 
-                DiagramCache diagramCache = RepositoryHelper.createDiagramCache(Repository, diagram);
+                RepositoryHelper.createDiagramCache(Repository, diagram,diagramCache);
                 IList<EA.Element> diagramElements = diagramCache.elementsList;
                 IList<EA.Element> classes = MetaDataManager.diagramClasses(Repository, diagramElements);
                 List<int> possibleRoots = new List<int>();

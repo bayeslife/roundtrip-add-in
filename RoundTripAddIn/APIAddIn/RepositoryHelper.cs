@@ -35,7 +35,7 @@ namespace RoundTripAddIn
 
         static void cacheDiagramElements(EA.Repository repository, EA.Collection collection, DiagramCache diagramCache)
         {
-            diagramCache.elementsList = new List<EA.Element>();
+            //diagramCache.elementsList = new List<EA.Element>();
             Object o;
             EA.Element e;
             if (collection.Count == 0)
@@ -43,18 +43,28 @@ namespace RoundTripAddIn
 
             int eId, pkgId;
             EA.Collection elements = null;
+
+            List<int> els = new List<int>();
+            for (short i = 0; i < collection.Count; i++)
+            {
+                o = collection.GetAt(i);
+                eId = ((EA.DiagramObject)o).ElementID;
+                if (diagramCache.elementIDHash.ContainsKey(eId))//Skip elements already cached
+                    continue;
+                els.Add(eId);                  
+            }
+
+
             StringBuilder sb;
             {                
                 sb = new StringBuilder();
-                for (short i = 0; i < collection.Count - 1; i++)
+                for (short i = 0; i < els.Count - 1; i++)
                 {
-                    o = collection.GetAt(i);
-                    eId = ((EA.DiagramObject)o).ElementID;
+                    eId = els[i];                                       
                     sb.Append(eId);
                     sb.Append(",");
                 }
-                o = collection.GetAt((short)(collection.Count - 1));
-                eId = ((EA.DiagramObject)o).ElementID;
+                eId = els[(short)(els.Count - 1)];                
                 sb.Append(eId);
                 String elementsString = sb.ToString();
                 //logger.log("DiagramObjectIds"+sb.ToString());
@@ -74,35 +84,7 @@ namespace RoundTripAddIn
                     if (!diagramCache.elementGuidHash.ContainsKey(el.ElementGUID))
                         diagramCache.elementGuidHash.Add(el.ElementGUID, el);
                 }
-            }
-
-            //for (short i = 0; i < elements.Count - 1; i++)                
-            //{
-            //    e = elements.GetAt(i);
-            //    sb.Append(e.PackageID);
-            //    sb.Append(",");
-            //}
-            //e = elements.GetAt((short)(elements.Count - 1));
-            //sb.Append(e.PackageID);
-            //{                
-            //    String elementsString = sb.ToString();
-            //    logger.log("Getting element packages:" + elementsString);
-            //    EA.Collection pelements = repository.GetElementSet(elementsString, 0);
-            //    logger.log("Got element packages"+pelements.Count);
-            //    if (pelements != null)
-            //    {
-            //        for (short i = 0; i < pelements.Count - 1; i++)
-            //        {
-            //            logger.log("h:" + i);
-            //            //Object o2 = pelements.GetAt(i);                        
-            //            logger.log("PKG");
-            //            //if (!diagramCache.elementIDHash.ContainsKey(e.ElementID))
-            //            //    diagramCache.elementIDHash.Add(e.ElementID, e);
-            //            //if (!diagramCache.elementGuidHash.ContainsKey(e.ElementGUID))
-            //            //    diagramCache.elementGuidHash.Add(e.ElementGUID, e);
-            //        }
-            //    }
-            //}            
+            }                    
         }
 
         static void populateCache(EA.Collection elements,DiagramCache diagramCache)
@@ -182,9 +164,9 @@ namespace RoundTripAddIn
         }
 
 
-        public static DiagramCache createDiagramCache(EA.Repository repository, EA.Diagram diagram)
-        {
-            DiagramCache result = new DiagramCache();           
+        public static DiagramCache createDiagramCache(EA.Repository repository, EA.Diagram diagram, DiagramCache result)
+        {            
+            //DiagramCache result = new DiagramCache();           
             cacheDiagramElements(repository, diagram.DiagramObjects,result);
             cacheDiagramClassifiers(repository, result);
             cacheDiagramPackages(repository, result);
@@ -218,6 +200,12 @@ namespace RoundTripAddIn
             elementIDHash = new Dictionary<int, EA.Element>();
             packageIDHash = new Dictionary<int, EA.Package>();
             elementGuidHash = new Dictionary<String, EA.Element>();
+        }
+
+        public void addElement(EA.Element element)
+        {
+            elementGuidHash[element.ElementGUID] = element;
+            elementsList.Add(element);
         }
 
     }

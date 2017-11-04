@@ -35,15 +35,15 @@ namespace RoundTripAddIn
         }
 
        
-        public static void syncPopulation(EA.Repository Repository, EA.Diagram diagram)
+        public static void syncPopulation(EA.Repository Repository, EA.Diagram diagram,DiagramCache diagramCache)
         {
             logger.log("Sync Population");
-            DiagramCache diagramCache = RepositoryHelper.createDiagramCache(Repository, diagram);
+            RepositoryHelper.createDiagramCache(Repository, diagram,diagramCache);
             IList<EA.Element> diagramElements = diagramCache.elementsList;
 
             IList<EA.Element> samples = MetaDataManager.diagramSamples(Repository, diagramElements);
 
-            EA.Element container = container = findContainer(Repository, diagram, diagramElements);
+            EA.Element container = container = MetaDataManager.findContainer(Repository, diagram, diagramCache, RoundTripAddInClass.EA_STEREOTYPE_POPULATION);
             EA.Element containerClassifierEl = Repository.GetElementByID(container.ClassfierID);
             string containerName = container.Name;
             string containerClassifier = containerClassifierEl.Name;
@@ -175,46 +175,6 @@ namespace RoundTripAddIn
             sample.RunState = ObjectManager.renderRunState(nrs);
             //logger.log(sample.RunState);
             sample.Update();
-
-            //foreach (EA.Connector con in sample.Connectors)
-            //{
-            //    logger.log("Connector:" + con.SupplierEnd.Role);
-            //    EA.Element related = null;
-
-            //    if (sample.ElementID == con.ClientID)
-            //    {
-            //        related = Repository.GetElementByID(con.SupplierID);
-
-            //        JProperty p = jo.Property(con.SupplierEnd.Role);
-
-            //        if (p != null)
-            //        {
-            //            //logger.log("Found Json Property:" + con.SupplierEnd.Role);
-            //            if (p.Value.Type == JTokenType.Object)
-            //            {
-            //                JObject pjo = (JObject)p.Value;
-            //                sync_population(Repository, related, classifier, pjo,pkg);
-            //            }
-            //            else if (p.Value.Type == JTokenType.Array)
-            //            {
-            //                JArray ja = (JArray)p.Value;
-            //                if (ja.Count > 0)
-            //                {
-            //                    JToken t = ja.ElementAt(0);
-            //                    ja.RemoveAt(0);
-            //                    if (t.Type == JTokenType.Object)
-            //                    {
-            //                        sync_population(Repository, related, classifier,(JObject)t,pkg);
-            //                    }
-            //                    else
-            //                    {
-            //                        MessageBox.Show("Arrays of types other than object not supported");
-            //                    }
-            //                }
-            //            }
-            //        }
-            //    }
-            //}
         }
 
         private static void sync_population_taggedvalue(EA.Repository Repository, EA.Element sample, EA.Element classifier, JObject jo, EA.Package pkg, DiagramCache diagramCache)
@@ -284,27 +244,6 @@ namespace RoundTripAddIn
             sample.Update();
         }
 
-
-
-
-        static EA.Element findContainer(EA.Repository Repository, EA.Diagram diagram, IList<EA.Element> diagramElements)
-        {
-            logger.log("Finding container for diagram:" + diagram.Name);
-
-            IList<EA.Element> samples = MetaDataManager.diagramSamples(Repository, diagramElements);
-            foreach (EA.Element sample in samples)
-            {
-                if (sample.Stereotype != null && sample.Stereotype == RoundTripAddInClass.EA_STEREOTYPE_POPULATION)
-                {
-                    logger.log("Population is identified by POPULATION stereotype");
-
-                    return sample;
-                }
-            }
-            throw new ModelValidationException("Unable to find Object stereotyped as Population on the diagram");
-        }
-
-
         static public Hashtable sampleToJObject(EA.Repository Repository, EA.Diagram diagram,DiagramCache diagramElements)
         {
             Hashtable result = new Hashtable();
@@ -317,7 +256,7 @@ namespace RoundTripAddIn
             IList<EA.Element> samples = MetaDataManager.diagramSamples(Repository, diagramElements.elementsList);
             logger.log("GetSamples" + samples.Count);
 
-            EA.Element root = findContainer(Repository, diagram, diagramElements.elementsList);
+            EA.Element root = MetaDataManager.findContainer(Repository, diagram, diagramElements, RoundTripAddInClass.EA_STEREOTYPE_POPULATION);
 
             MetaDataManager.extractDiagramMetaData(result, root);
 
@@ -341,20 +280,23 @@ namespace RoundTripAddIn
                     //skip root elements that are the population elements.
                     continue;
 
+                String type = "";
                 EA.Element clazz = null;
                 if (sample.ClassifierID != 0)
                 {
                     clazz = diagramElements.elementIDHash[sample.ClassifierID];
+                    type = clazz.Name;
                 } else {
                     logger.log("Classifier is null");
                 }
+                                                
 
                 EA.Package package = diagramElements.packageIDHash[sample.PackageID];
 
                 JObject jsonClass = null;
 
                 {
-                    jsonClass = new JObject();
+                    jsonClass = new JObject();                    
                     jsonClass.Add(new JProperty(RoundTripAddInClass.POPULATION_PROPERTY_GUID, sample.ElementGUID));
                     jsonClass.Add(new JProperty(RoundTripAddInClass.POPULATION_PROPERTY_NAME, sample.Name));
                     jsonClass.Add(new JProperty(RoundTripAddInClass.POPULATION_PROPERTY_NOTES, sample.Notes));
@@ -456,7 +398,7 @@ namespace RoundTripAddIn
             return result;
         }
 
-        static public void exportPopulation(EA.Repository Repository, EA.Diagram diagram)
+        static public void exportPopulation(EA.Repository Repository, EA.Diagram diagram,DiagramCache diagramCache)
         {
             try
             {
@@ -466,7 +408,7 @@ namespace RoundTripAddIn
                     return;
                 }
 
-                DiagramCache diagramCache = RepositoryHelper.createDiagramCache(Repository, diagram);
+                RepositoryHelper.createDiagramCache(Repository, diagram,diagramCache);
                 IList<EA.Element> diagramElements = diagramCache.elementsList;
 
                 Hashtable ht = sampleToJObject(Repository, diagram, diagramCache);

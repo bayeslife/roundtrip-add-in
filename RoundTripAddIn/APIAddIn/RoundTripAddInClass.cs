@@ -40,7 +40,9 @@ namespace RoundTripAddIn
         const string menuExportMapping = "&Export Mapping";
         const string menuSyncMapping = "&Sync Mapping";
         const string menuSyncPopulation = "&Sync Population";
-        const string menuSyncHierarchy = "&Sync Hierarhcy";
+        const string menuSyncHierarchy = "&Sync Hierarchy";
+        const string menuExportConstraint = "&Export Constraints";
+        const string menuSyncConstraint = "&Sync Constraints";
 
         const string menuSqlQuery = "&SqlQuery";
 
@@ -77,6 +79,7 @@ namespace RoundTripAddIn
         public static string EA_STEREOTYPE_POPULATIONDIAGRAM = "PopulationDiagram";
         public static string EA_STEREOTYPE_MAPPINGDIAGRAM = "MappingDiagram";
         public static string EA_STEREOTYPE_HIERARCHYDIAGRAM = "HierarchyDiagram";
+        public static string EA_STEREOTYPE_CONSTRAINTDIAGRAM = "ConstraintDiagram";
 
         public static string EA_STEREOTYPE_SAMPLE = "Sample";
         public static string EA_STEREOTYPE_REQUEST = "Request";
@@ -84,6 +87,7 @@ namespace RoundTripAddIn
         public static string EA_STEREOTYPE_POPULATION = "Population";
         public static string EA_STEREOTYPE_HIERARCHY = "Hierarchy";
         public static string EA_STEREOTYPE_MAPPING = "Mapping";
+        public static string EA_STEREOTYPE_CONSTRAINT = "Constraint";
 
         public static string EA_STEREOTYPE_EMBEDDED = "Embedded";
 
@@ -168,6 +172,19 @@ namespace RoundTripAddIn
         public static string MAPPING_PROPERTY_TYPE = "type";
         public static string MAPPING_PROPERTY_STEREOTYPE = "stereotype";
 
+        public static string CONSTRAINT_PATH = "constraint";
+        public static string CONSTRAINT_PROPERTY_GUID = "id";
+        public static string CONSTRAINT_PROPERTY_NAME = "name";
+        public static string CONSTRAINT_PROPERTY_CLASS = "class";
+        public static string CONSTRAINT_PROPERTY_STEREOTYPE = "stereotype";
+        public static string CONSTRAINT_PROPERTY_RELATED_GUID = "id";
+        public static string CONSTRAINT_PROPERTY_RELATED_NAME = "targetname";
+        public static string CONSTRAINT_PROPERTY_RELATED_CLASS = "targetclass";
+        public static string CONSTRAINT_PROPERTY_CONNECTOR_GUID = "connectorid";
+        public static string CONSTRAINT_PROPERTY_CONNECTOR_TYPE = "type";
+        
+        public static string PROPERTY_SELECTOR = "selector";
+
         ///
         /// Called Before EA starts to check Add-In Exists
         /// Nothing is done here.
@@ -197,6 +214,9 @@ namespace RoundTripAddIn
 
             PopulationManager.setLogger(logger);
             PopulationManager.setFileManager(fileManager);
+
+            ConstraintManager.setLogger(logger);
+            ConstraintManager.setFileManager(fileManager);
 
             DiagramManager.setLogger(logger);
             DiagramManager.setFileManager(fileManager);
@@ -248,6 +268,7 @@ namespace RoundTripAddIn
                     string[] subMenusPopulation = { menuExportPopulation, menuSyncPopulation, menuExportDiagram , menuToggleLogging};
                     string[] subMenusHierarchy = { menuExportHierarchy, menuSyncHierarchy, menuExportDiagram, menuToggleLogging };
                     string[] subMenusMapping = { menuExportMapping, menuSyncMapping, menuExportDiagram, menuToggleLogging };
+                    string[] subMenusConstraint = { menuExportConstraint, menuSyncConstraint, menuExportDiagram, menuToggleLogging };
                     //string[] subMenusCanonical = { menuExportAll, menuExportDiagram, menuExportCanonical, menuCreateSample, menuUpdateClassFromInstance, menuUpdateInstanceFromClass, menuToggleLogging };
 
                     if (diagram != null && diagram.Stereotype.Equals(RoundTripAddInClass.EA_STEREOTYPE_SCHEMADIAGRAM))
@@ -274,6 +295,11 @@ namespace RoundTripAddIn
                     {
                         logger.log("Mapping Menus");
                         return subMenusMapping;
+                    }
+                    else if (diagram != null && diagram.Stereotype.Equals(RoundTripAddInClass.EA_STEREOTYPE_CONSTRAINTDIAGRAM))
+                    {
+                        logger.log("Constraint Menus");
+                        return subMenusConstraint;
                     }
                     //else if (diagram != null && diagram.Stereotype.Equals(RoundTripAddInClass.EA_STEREOTYPE_CANONICALDIAGRAM))
                     //{
@@ -387,6 +413,13 @@ namespace RoundTripAddIn
                         if (diagram != null && diagram.Stereotype.Equals(RoundTripAddInClass.EA_STEREOTYPE_HIERARCHYDIAGRAM))
                             IsEnabled = true;
                         break;
+                   
+                    case menuSyncConstraint:
+                    case menuExportConstraint:
+                        IsEnabled = false;
+                        if (diagram != null && diagram.Stereotype.Equals(RoundTripAddInClass.EA_STEREOTYPE_CONSTRAINTDIAGRAM))
+                            IsEnabled = true;
+                        break;
 
                     case menuExportAll:
                         IsEnabled = false;
@@ -423,7 +456,8 @@ namespace RoundTripAddIn
         public void EA_MenuClick(EA.Repository Repository, string Location, string MenuName, string ItemName)
         {
             logger.enable(Repository);
-            
+
+            DiagramCache diagramCache = new DiagramCache();
 
             EA.Diagram diagram = null;
             if (Repository.GetContextItemType() == ObjectType.otDiagram)
@@ -432,36 +466,43 @@ namespace RoundTripAddIn
             switch (ItemName)
             {
                 case menuExportMapping:
-                    MappingManager.exportMapping(Repository, diagram);
-                    //MetaDataManager.setAsMappingDiagram(Repository, diagram);
+                    MappingManager.exportMapping(Repository, diagram,diagramCache);                    
                     break;
                 case menuSyncMapping:
-                    MappingManager.syncMapping(Repository, diagram);
+                    MappingManager.syncMapping(Repository, diagram, diagramCache);
                     break;
 
                 case menuExportHierarchy:
                     logger.log("Menu Export Hierarchy");
-                    HierarchyManager.exportHierarchy(Repository, diagram);
-                    //MetaDataManager.setAsHierarhcyDiagram(Repository, diagram);
+                    HierarchyManager.exportHierarchy(Repository, diagram, diagramCache);
+                    
                     break;
                 case menuExportPopulation:                    
-                    PopulationManager.exportPopulation(Repository, diagram);
-                    MetaDataManager.setAsPopulationDiagram(Repository, diagram);
+                    PopulationManager.exportPopulation(Repository, diagram, diagramCache);
+                    
                     break;
                 case menuSyncPopulation:
-                    PopulationManager.syncPopulation(Repository, diagram);
+                    PopulationManager.syncPopulation(Repository, diagram, diagramCache);
                     break;
 
                 case menuSyncHierarchy:
-                    HierarchyManager.syncHierarchy(Repository, diagram);
+                    HierarchyManager.syncHierarchy(Repository, diagram, diagramCache);
+                    break;
+
+
+                case menuExportConstraint:
+                    ConstraintManager.exportConstraint(Repository, diagram, diagramCache);                    
+                    break;
+                case menuSyncConstraint:
+                    ConstraintManager.syncConstraint(Repository, diagram, diagramCache);
                     break;
 
                 case menuExportAll:                    
-                    exportAll(Repository);
+                    exportAll(Repository,diagramCache);
                     break;
 
                 case menuExportPackage:
-                    exportPackage(Repository);
+                    exportPackage(Repository, diagramCache);
                     break;
 
                 case menuExportDiagram:
@@ -471,7 +512,7 @@ namespace RoundTripAddIn
                 case menuExportSchema:
                     try
                     {
-                        SchemaManager.exportSchema(Repository, diagram);
+                        SchemaManager.exportSchema(Repository, diagram,diagramCache);
                         MetaDataManager.setAsSchemaDiagram(Repository, diagram);
                     }
                     catch (Exception ex)
@@ -493,16 +534,16 @@ namespace RoundTripAddIn
                 //    break;
                 
                 case menuExportSample:                    
-                    SampleManager.exportSample(Repository,diagram);
+                    SampleManager.exportSample(Repository,diagram,diagramCache);
                     MetaDataManager.setAsSampleDiagram(Repository, diagram);
                     break;
 
                 case menuSyncSample:
-                    SampleManager.syncSample(Repository,diagram);
+                    SampleManager.syncSample(Repository,diagram,diagramCache);
                     break;
 
                 case menuCreateSample:
-                    SchemaManager.generateSample(Repository);
+                    SchemaManager.generateSample(Repository,diagramCache);
                     break;
 
                 case menuUpdateClassFromInstance:
@@ -516,10 +557,10 @@ namespace RoundTripAddIn
                 case menuValidateDiagram:
                     if (diagram != null)
                         if(diagram.Stereotype.Equals(RoundTripAddInClass.EA_STEREOTYPE_SAMPLEDIAGRAM))
-                            SampleManager.validateDiagram(Repository,diagram);
+                            SampleManager.validateDiagram(Repository,diagram,diagramCache);
                         else if (diagram.Stereotype.Equals(RoundTripAddInClass.EA_STEREOTYPE_SCHEMADIAGRAM))
                         {
-                            SchemaManager.validateDiagram(Repository, diagram);
+                            SchemaManager.validateDiagram(Repository, diagram,diagramCache);
                         }                            
                         
                     break;
@@ -539,22 +580,22 @@ namespace RoundTripAddIn
             }
         }
 
-        private void exportPackage(EA.Repository Repository)
+        private void exportPackage(EA.Repository Repository,DiagramCache diagramCache)
         {
             EA.Package pkg = Repository.GetTreeSelectedPackage();
-            exportPackage(Repository, pkg);
+            exportPackage(Repository, pkg,diagramCache);
         }
 
-        private void exportPackage(EA.Repository Repository, EA.Package pkg)
+        private void exportPackage(EA.Repository Repository, EA.Package pkg,DiagramCache diagramCache)
         {
-            exportRoundTripPackage(Repository, pkg);
+            exportRoundTripPackage(Repository, pkg,diagramCache);
             foreach (EA.Package p in pkg.Packages)
             {                
-                exportPackage(Repository, p);//recurse
+                exportPackage(Repository, p,diagramCache);//recurse
             }
         }
 
-        private void exportAll(EA.Repository Repository)
+        private void exportAll(EA.Repository Repository,DiagramCache diagramCache)
         {
             EA.Diagram diagram = null;
             if (Repository.GetContextItemType() == ObjectType.otDiagram)
@@ -562,27 +603,27 @@ namespace RoundTripAddIn
                    
             EA.Package apiPackage = Repository.GetPackageByID(diagram.PackageID);
 
-            exportRoundTripPackage(Repository, apiPackage);
+            exportRoundTripPackage(Repository, apiPackage,diagramCache);
         }
 
-        private void exportRoundTripPackage(EA.Repository Repository, EA.Package package)
+        private void exportRoundTripPackage(EA.Repository Repository, EA.Package package,DiagramCache diagramCache)
         {
-
+            
             foreach (object obj in package.Diagrams)
             {
                 EA.Diagram samplediagram = (EA.Diagram)obj;
-                logger.log("Exporting Schema Diagram:" + samplediagram.Name);
-                DiagramManager.exportDiagram(Repository, samplediagram);
 
+               
+                    //DiagramManager.exportDiagram(Repository, samplediagram, diagramCache);
                 if (samplediagram.Stereotype == RoundTripAddInClass.EA_STEREOTYPE_POPULATIONDIAGRAM)
                 {
-                    PopulationManager.exportPopulation(Repository, samplediagram);
+                    PopulationManager.exportPopulation(Repository, samplediagram, diagramCache);
                 } else if (samplediagram.Stereotype == RoundTripAddInClass.EA_STEREOTYPE_MAPPINGDIAGRAM)
                 {
-                    MappingManager.exportMapping(Repository, samplediagram);
+                    MappingManager.exportMapping(Repository, samplediagram, diagramCache);
                 } else if (samplediagram.Stereotype == RoundTripAddInClass.EA_STEREOTYPE_HIERARCHYDIAGRAM)
                 {
-                    HierarchyManager.exportHierarchy(Repository, samplediagram);
+                    HierarchyManager.exportHierarchy(Repository, samplediagram, diagramCache);
                 }
             }            
         }
@@ -598,14 +639,15 @@ namespace RoundTripAddIn
 
 
         private void exportAllGlobal(EA.Repository Repository)
-        {           
+        {
+            DiagramCache diagramCache = new DiagramCache();
             {
                 List<string> diagrams = DiagramManager.querySchemaDiagrams(Repository);
                 foreach (string diagramId in diagrams)
                 {
                     EA.Diagram diagram = Repository.GetDiagramByGuid(diagramId);
                     logger.log("Exporting Schema Diagram:" + diagram.Name);
-                    SchemaManager.exportSchema(Repository, diagram);
+                    SchemaManager.exportSchema(Repository, diagram,diagramCache);
                 }
             }
             {
@@ -618,7 +660,7 @@ namespace RoundTripAddIn
                     EA.Package apiPackage = Repository.GetPackageByID(samplePackage.ParentID);
 
                     logger.log("Exporting Sample Diagram:" + diagram.Name + " from api package:" + apiPackage.Name);
-                    SampleManager.exportSample(Repository, diagram);
+                    SampleManager.exportSample(Repository, diagram,diagramCache);
                 }
             }
         }

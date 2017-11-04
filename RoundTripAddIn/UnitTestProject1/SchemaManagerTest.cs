@@ -144,6 +144,7 @@ namespace UnitTestProject1
         [TestMethod]
         public void TestGenerateSample()
         {
+            DiagramCache diagramCache = new DiagramCache();
             EAMetaModel meta = new EAMetaModel().setupSchemaPackage();
             EAFactory rootClass = new EAFactory();
 
@@ -152,7 +153,7 @@ namespace UnitTestProject1
 
 
             //Test
-            EA.Package package = SchemaManager.generateSample(EARepository.Repository);
+            EA.Package package = SchemaManager.generateSample(EARepository.Repository,diagramCache);
             Assert.AreEqual(1, package.Diagrams.Count);
 
             Assert.AreEqual(3, package.Elements.Count);
@@ -196,6 +197,7 @@ namespace UnitTestProject1
         [TestMethod]
         public void TestUpdateClassFromInstance()
         {
+            DiagramCache diagramCache = new DiagramCache();
             EAMetaModel meta = new EAMetaModel().setupSchemaPackage();
             EAFactory rootClass = new EAFactory();
 
@@ -205,7 +207,7 @@ namespace UnitTestProject1
             object o = el.Attributes.AddNew("SomeAttribute", "Attribute");
             EA.Attribute attr = (EA.Attribute)o;
             
-            EA.Package pkg = SchemaManager.generateSample(EARepository.Repository);
+            EA.Package pkg = SchemaManager.generateSample(EARepository.Repository,diagramCache);
 
             object os = pkg.Elements.GetAt(0);
             EA.Element sample = (EA.Element)os;
@@ -223,6 +225,7 @@ namespace UnitTestProject1
         [TestMethod]
         public void TestUpdateClassFromInstance_NewDataItem()
         {
+            DiagramCache diagramCache = new DiagramCache();
             EAMetaModel meta = new EAMetaModel().setupSchemaPackage();
             EAFactory rootClass = new EAFactory();
 
@@ -232,7 +235,7 @@ namespace UnitTestProject1
             EAFactory attrFactory = rootClass.addSupplier("SomeAttribute", RoundTripAddInClass.EA_TYPE_CLASS, 0, RoundTripAddInClass.EA_STEREOTYPE_DATAITEM, null, "someAttribute", RoundTripAddInClass.CARDINALITY_0_TO_ONE, null);            
             EA.Element attr = attrFactory.clientElement;
             
-            EA.Package pkg = SchemaManager.generateSample(EARepository.Repository);
+            EA.Package pkg = SchemaManager.generateSample(EARepository.Repository,diagramCache);
 
             object os = pkg.Elements.GetAt(0);
             EA.Element sample = (EA.Element)os;
@@ -252,6 +255,7 @@ namespace UnitTestProject1
         [TestMethod]
         public void TestUpdateInstanceFromClass()
         {
+            DiagramCache diagramCache = new DiagramCache();
             EAMetaModel meta = new EAMetaModel().setupSchemaPackage();
             EAFactory rootClass = new EAFactory();
 
@@ -264,7 +268,7 @@ namespace UnitTestProject1
             EAFactory anotherAttribute = rootClass.addSupplier("anotherAttribute", RoundTripAddInClass.EA_TYPE_CLASS, 0, RoundTripAddInClass.EA_STEREOTYPE_DATAITEM, null, "", RoundTripAddInClass.CARDINALITY_0_TO_ONE, "");
             EA.Element attrClass = anotherAttribute.clientElement;
             
-            EA.Package pkg = SchemaManager.generateSample(EARepository.Repository);
+            EA.Package pkg = SchemaManager.generateSample(EARepository.Repository,diagramCache);
             
             object os = pkg.Elements.GetAt(0);
             EA.Element sample = (EA.Element)os;

@@ -36,11 +36,11 @@ namespace RoundTripAddIn
             fileManager = fm;
         }
                 
-        public static void syncSample(EA.Repository Repository,EA.Diagram diagram)
+        public static void syncSample(EA.Repository Repository,EA.Diagram diagram,DiagramCache diagramCache)
         {
             logger.log("Sync Sample");
 
-            DiagramCache diagramCache = RepositoryHelper.createDiagramCache(Repository, diagram);
+            RepositoryHelper.createDiagramCache(Repository, diagram,diagramCache);
             IList<EA.Element> diagramElements = diagramCache.elementsList;
 
             IList<EA.Element> samples = MetaDataManager.diagramSamples(Repository, diagramElements);
@@ -452,9 +452,9 @@ namespace RoundTripAddIn
             return result;
         }
 
-        static public void exportSample(EA.Repository Repository, EA.Diagram diagram)
+        static public void exportSample(EA.Repository Repository, EA.Diagram diagram,DiagramCache diagramCache)
         {
-            DiagramCache diagramCache = RepositoryHelper.createDiagramCache(Repository, diagram);
+            RepositoryHelper.createDiagramCache(Repository, diagram,diagramCache);
 
             Hashtable ht = sampleToJObject(Repository, diagram, diagramCache.elementsList);
             string sample = (string)ht["sample"];
@@ -498,9 +498,9 @@ namespace RoundTripAddIn
         ///
         /// Validate all object run state keys correspond to classifier attributes
         ///
-        static public void validateDiagram(EA.Repository Repository,EA.Diagram diagram)
+        static public void validateDiagram(EA.Repository Repository,EA.Diagram diagram,DiagramCache diagramCache)
         {
-            DiagramCache diagramCache = RepositoryHelper.createDiagramCache(Repository, diagram);
+            RepositoryHelper.createDiagramCache(Repository, diagram,diagramCache);
             IList<EA.Element> diagramElements = diagramCache.elementsList;
             IList<string> messages = diagramValidation(Repository,diagram, diagramElements);
 

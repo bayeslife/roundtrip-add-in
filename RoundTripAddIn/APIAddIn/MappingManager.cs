@@ -93,24 +93,7 @@ namespace RoundTripAddIn
             else
                 return value;
         }
-
-        static EA.Element findContainer(EA.Repository Repository, EA.Diagram diagram,DiagramCache diagramCache)
-        {
-            logger.log("Finding container for diagram:" + diagram.Name);
-
-            IList<EA.Element> samples = MetaDataManager.diagramSamples(Repository, diagramCache.elementsList);
-            foreach (EA.Element sample in samples)
-            {
-                if (sample.Stereotype != null && sample.Stereotype == RoundTripAddInClass.EA_STEREOTYPE_MAPPING)
-                {
-                    logger.log("Mapping is identified by Mapping stereotype");
-
-                    return sample;
-                }
-            }
-            throw new ModelValidationException("Unable to find Object stereotyped as Hierarchy on the diagram");
-        }
-
+   
         static public void parentToJObject(EA.Repository Repository, EA.Diagram diagram, JArray container, IList<int> sampleIds, EA.Element ancestor, EA.Element parent, IList<int> visited, IList<int> relationsVisited,DiagramCache diagramCache)
         {
             IList<EA.Element> children = new List<EA.Element>();
@@ -150,7 +133,6 @@ namespace RoundTripAddIn
                         source = target;
                         target = h;
                     }
-
                 }                             
 
                 String sourceGuid = source.ElementGUID;
@@ -169,6 +151,11 @@ namespace RoundTripAddIn
                 EA.Element targetClazz = diagramCache.elementIDHash[target.ClassifierID];
                 if (targetClazz != null)
                     targetClass = targetClazz.Name;
+
+                if (targetClass.Equals(sourceClass))
+                {
+                    continue;//skip inter type links
+                }
                                     
                                            
                 //if (visited.Contains(related.ElementID))
@@ -212,8 +199,8 @@ namespace RoundTripAddIn
 
             IList<EA.Element> samples = MetaDataManager.diagramSamples(Repository, diagramCache.elementsList);
 
-            EA.Element root = findContainer(Repository, diagram, diagramCache);
-
+            EA.Element root = MetaDataManager.findContainer(Repository, diagram, diagramCache, RoundTripAddInClass.EA_STEREOTYPE_MAPPING);
+               
             logger.log("MetaData container:" + root.Name);
 
             EA.Element rootClassifier = diagramCache.elementIDHash[root.ClassifierID];
@@ -262,14 +249,13 @@ namespace RoundTripAddIn
             return result;
         }
 
-        static public void exportMapping(EA.Repository Repository, EA.Diagram diagram)
+        static public void exportMapping(EA.Repository Repository, EA.Diagram diagram,DiagramCache diagramCache)
         {
             try
             {
                 DiagramManager.captureDiagramLinks(diagram);
 
-                DiagramCache diagramCache = RepositoryHelper.createDiagramCache(Repository, diagram);
-                //IList<EA.Element> diagramElements = diagramCache.elementsList;
+                RepositoryHelper.createDiagramCache(Repository, diagram,diagramCache);                
 
                 if (!diagram.Stereotype.Equals(RoundTripAddInClass.EA_STEREOTYPE_MAPPINGDIAGRAM))
                 {
@@ -393,14 +379,14 @@ namespace RoundTripAddIn
         //}
 
 
-        public static void syncMapping(EA.Repository Repository, EA.Diagram diagram)
+        public static void syncMapping(EA.Repository Repository, EA.Diagram diagram,DiagramCache diagramCache)
         {
             logger.log("Sync Mapping");
-            DiagramCache diagramCache = RepositoryHelper.createDiagramCache(Repository, diagram);
+            RepositoryHelper.createDiagramCache(Repository, diagram,diagramCache);
             IList<EA.Element> diagramElements = diagramCache.elementsList;
             IList<EA.Element> samples = MetaDataManager.diagramSamples(Repository, diagramElements);
 
-            EA.Element container = container = findContainer(Repository, diagram, diagramCache);
+            EA.Element container = container = MetaDataManager.findContainer(Repository, diagram, diagramCache,RoundTripAddInClass.EA_STEREOTYPE_MAPPING);
             EA.Element containerClassifierEl = diagramCache.elementIDHash[container.ClassfierID];
             string containerName = container.Name;
             string containerClassifier = containerClassifierEl.Name;
