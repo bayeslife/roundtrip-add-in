@@ -227,5 +227,81 @@ namespace RoundTripAddIn
     }
 
 
-}
+        public static void sync_element_taggedvalue(EA.Repository Repository, EA.Element sample, EA.Element classifier, JObject jo, EA.Package pkg, DiagramCache diagramCache)
+        {
+            logger.log("Syncing JObject:" + sample.Name);
+            EA.Collection taggedValues = sample.TaggedValues;
+
+            if(classifier!=null)
+                sample.ClassifierID = classifier.ElementID;
+
+            foreach (JProperty p in jo.Properties())
+            {
+
+                if (p.Name == RoundTripAddInClass.POPULATION_PROPERTY_GUID)
+                {
+                    continue;
+                }
+                if (p.Name == RoundTripAddInClass.CONSTRAINT_PROPERTY_SOURCE || p.Name == RoundTripAddInClass.CONSTRAINT_PROPERTY_TARGET)
+                {
+                    continue;
+                }
+                if (p.Name == RoundTripAddInClass.CONSTRAINT_PROPERTY_CLASS || p.Name == RoundTripAddInClass.CONSTRAINT_PROPERTY_STEREOTYPE)
+                {
+                    continue;
+                }
+                if (p.Name == RoundTripAddInClass.POPULATION_PROPERTY_PACKAGE)
+                {
+                    continue;
+                }
+                if (p.Name == RoundTripAddInClass.POPULATION_PROPERTY_NAME)
+                {
+                    sample.Name = p.Value.ToString();
+                    continue;
+                }
+                if (p.Name == RoundTripAddInClass.POPULATION_PROPERTY_NOTES)
+                {
+                    sample.Notes = p.Value.ToString();
+                    continue;
+                }
+
+
+                if (p.Name == RoundTripAddInClass.POPULATION_PROPERTY_TYPE)
+                {
+                    string classifierName = p.Value.ToString();
+                    EA.Element clazz = RepositoryHelper.queryClassifier(Repository, classifierName);
+                    if (clazz != null)
+                    {
+                        sample.ClassifierID = clazz.ElementID;
+                        continue;
+                    }
+
+
+                }
+                if (p.Value.Type != JTokenType.Object && p.Value.Type != JTokenType.Array)
+                {
+                    //logger.log("Handling Property:" + p.Name);
+
+                    EA.TaggedValue r = taggedValues.GetByName(p.Name);
+
+                    if (r != null)
+                    {
+                        //logger.log("Existing Tag");                        
+                        r.Value = p.Value.ToString();
+                        r.Update();
+                    }
+                    else
+                    {
+                        //logger.log("New Tag");                                                
+                        EA.TaggedValue tv = sample.TaggedValues.AddNew(p.Name, RoundTripAddInClass.EA_TYPE_STRING);
+                        tv.Value = p.Value.ToString();
+                        tv.Update();
+                    }
+
+                }
+            }
+            sample.Update();
+        }
+
+    }
 }

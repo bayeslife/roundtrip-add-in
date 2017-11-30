@@ -380,35 +380,43 @@ namespace RoundTripAddIn
 
             static public void extractDiagramMetaData(Hashtable result, EA.Element root)
             {
-                int level = 1;
-                String prefix = "";
-                String filename = "";
-                String project = "";
+            int level = 1;
+            String prefix = "";
+            String filename = "";
+            String project = "";
+            String intertype = "n";
 
 
-                String runState = root.RunState;
+            String runState = root.RunState;
 
-                logger.log("RunState is:" + runState);
+            logger.log("RunState is:" + runState);
 
-                Dictionary<string, RunState> rs = ObjectManager.parseRunState(runState);
-                if (rs.ContainsKey(RoundTripAddInClass.HIERARCHY_LEVEL))
-                {
-                    level = Int32.Parse(rs[RoundTripAddInClass.HIERARCHY_LEVEL].value);
-                    result.Add(RoundTripAddInClass.HIERARCHY_LEVEL, level);
-                    logger.log("Level is:" + level);
-                }
-
-
-                if (rs.ContainsKey(RoundTripAddInClass.PREFIX))
-                {
-                    prefix = rs[RoundTripAddInClass.PREFIX].value;
-                    result.Add(RoundTripAddInClass.PREFIX, prefix);
-                    logger.log("Prefix is:" + prefix);
-
-                }
+            Dictionary<string, RunState> rs = ObjectManager.parseRunState(runState);
+            if (rs.ContainsKey(RoundTripAddInClass.HIERARCHY_LEVEL))
+            {
+                level = Int32.Parse(rs[RoundTripAddInClass.HIERARCHY_LEVEL].value);
+                result.Add(RoundTripAddInClass.HIERARCHY_LEVEL, level);
+                logger.log("Level is:" + level);
+            }
 
 
-                if (rs.ContainsKey(RoundTripAddInClass.FILENAME))
+            if (rs.ContainsKey(RoundTripAddInClass.PREFIX))
+            {
+                prefix = rs[RoundTripAddInClass.PREFIX].value;
+                result.Add(RoundTripAddInClass.PREFIX, prefix);
+                logger.log("Prefix is:" + prefix);
+
+            }
+
+            if (rs.ContainsKey(RoundTripAddInClass.INCLUDE_INTERTYPE))
+            {
+                intertype = rs[RoundTripAddInClass.INCLUDE_INTERTYPE].value;                    
+                logger.log("Include Intertype Links is:" + intertype);
+            }
+            result.Add(RoundTripAddInClass.INCLUDE_INTERTYPE, intertype);
+
+
+            if (rs.ContainsKey(RoundTripAddInClass.FILENAME))
                 {
                     filename = rs[RoundTripAddInClass.FILENAME].value;
                 }

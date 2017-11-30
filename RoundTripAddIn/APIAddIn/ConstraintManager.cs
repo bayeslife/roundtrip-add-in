@@ -57,8 +57,8 @@ namespace RoundTripAddIn
 
             JArray sources = new JArray();
             JArray targets = new JArray();
-            jsonClass.Add("source", sources);
-            jsonClass.Add("target", targets);
+            jsonClass.Add(RoundTripAddInClass.CONSTRAINT_PROPERTY_SOURCE, sources);
+            jsonClass.Add(RoundTripAddInClass.CONSTRAINT_PROPERTY_TARGET, targets);
 
             foreach (EA.Connector con in constraint.Connectors)
             {
@@ -318,10 +318,10 @@ namespace RoundTripAddIn
             {
                 //logger.log("Syncing Constraint:");
 
-
                 EA.Element constraint = reifyElement(Repository,diagramCache,jo,pkg);
+                ObjectManager.sync_element_taggedvalue(Repository, constraint, null, jo, pkg, diagramCache);
 
-                JArray sources = (JArray)jo.GetValue("source");  
+                JArray sources = (JArray)jo.GetValue(RoundTripAddInClass.CONSTRAINT_PROPERTY_SOURCE);  
                 foreach(JObject relatedJo in sources)
                 {
                     EA.Element related = reifyElement(Repository, diagramCache, relatedJo,pkg);
@@ -334,7 +334,7 @@ namespace RoundTripAddIn
                     }
                     sync_relationship(Repository, diagram, connectorId,related, constraint, relatedJo, pkg);                    
                 }
-                JArray targets = (JArray)jo.GetValue("target");
+                JArray targets = (JArray)jo.GetValue(RoundTripAddInClass.CONSTRAINT_PROPERTY_TARGET);
                 foreach (JObject relatedJo in targets)
                 {
                     EA.Element related = reifyElement(Repository, diagramCache, relatedJo,pkg);                    

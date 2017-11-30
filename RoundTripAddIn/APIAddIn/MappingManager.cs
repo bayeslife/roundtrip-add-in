@@ -94,12 +94,15 @@ namespace RoundTripAddIn
                 return value;
         }
    
-        static public void parentToJObject(EA.Repository Repository, EA.Diagram diagram, JArray container, IList<int> sampleIds, EA.Element ancestor, EA.Element parent, IList<int> visited, IList<int> relationsVisited,DiagramCache diagramCache)
+        static public void parentToJObject(EA.Repository Repository, EA.Diagram diagram, JArray container, IList<int> sampleIds, EA.Element ancestor, EA.Element parent, IList<int> visited, IList<int> relationsVisited,DiagramCache diagramCache,string intertype)
         {
+            
+
             IList<EA.Element> children = new List<EA.Element>();
             visited.Add(parent.ElementID);
             foreach (EA.Connector con in parent.Connectors)
             {
+                
                 if (relationsVisited.Contains(con.ConnectorID))
                     continue;
 
@@ -108,8 +111,7 @@ namespace RoundTripAddIn
 
                 relationsVisited.Add(con.ConnectorID);
 
-                EA.Element source = parent;                
-                //EA.Element target = Repository.GetElementByID(con.SupplierID);
+                EA.Element source = parent;                                
                 EA.Element target = diagramCache.elementIDHash[con.SupplierID];
 
                 if (source.ClassifierID != target.ClassifierID)
@@ -119,11 +121,11 @@ namespace RoundTripAddIn
                 }
 
                 if (target.ElementID == parent.ElementID)
-                {
-                    //target = Repository.GetElementByID(con.ClientID);
+                {                    
                     target = diagramCache.elementIDHash[con.ClientID];
                 }
 
+                
                 if (source.ClassifierID == target.ClassifierID)
                 {
                     //If they are of the same type we maintain link direction
@@ -137,22 +139,27 @@ namespace RoundTripAddIn
 
                 String sourceGuid = source.ElementGUID;
                 String sourceName = source.Name;
-                String sourceClass = source.ClassifierName;
-                //EA.Element sourceClazz = Repository.GetElementByID(source.ClassifierID);
-                EA.Element sourceClazz = diagramCache.elementIDHash[source.ClassifierID];
-                if (sourceClazz!=null)
+                String sourceClass = "";
+                EA.Element sourceClazz = null;
+                if (source.ClassifierID != 0)
+                {
+                    sourceClass = source.ClassifierName;
+                    sourceClazz = diagramCache.elementIDHash[source.ClassifierID];
                     sourceClass = sourceClazz.Name;
-
+                }                                 
                 
                 String targetGuid = target.ElementGUID;
                 String targetName = target.Name;
-                String targetClass = target.ClassifierName;
-                //EA.Element  targetClazz = Repository.GetElementByID(target.ClassifierID);
-                EA.Element targetClazz = diagramCache.elementIDHash[target.ClassifierID];
-                if (targetClazz != null)
-                    targetClass = targetClazz.Name;
+                String targetClass = "";
+                EA.Element targetClazz = null;
+                if (target.ClassifierID != 0)
+                {
+                    targetClazz = diagramCache.elementIDHash[target.ClassifierID];
+                    targetClass = targetClazz.Name;                    
+                }
 
-                if (targetClass.Equals(sourceClass))
+                
+                if ((!intertype.Equals("Y")) && targetClass.Equals(sourceClass))
                 {
                     continue;//skip inter type links
                 }
@@ -162,6 +169,8 @@ namespace RoundTripAddIn
                  //   continue;
 
                 JObject jsonClass = new JObject();
+                jsonClass.Add(new JProperty(RoundTripAddInClass.MAPPING_PROPERTY_NAME, con.Name));
+                jsonClass.Add(new JProperty(RoundTripAddInClass.MAPPING_PROPERTY_NOTES, con.Notes));
                 jsonClass.Add(new JProperty(RoundTripAddInClass.MAPPING_PROPERTY_SOURCE, sourceGuid));                
                 jsonClass.Add(new JProperty(RoundTripAddInClass.MAPPING_PROPERTY_SOURCE_NAME, sourceName));                
                 jsonClass.Add(new JProperty(RoundTripAddInClass.MAPPING_PROPERTY_SOURCE_CLASS, sourceClass));                
@@ -181,13 +190,13 @@ namespace RoundTripAddIn
             //parentsToJObject(Repository, diagram, container, sampleIds, parent, children,visited);
         }
 
-        static public void parentsToJObject(EA.Repository Repository, EA.Diagram diagram, JArray container, IList<int> sampleIds, EA.Element ancestor, IList<EA.Element> parents, IList<int> visited, IList<int> relationsVisited,DiagramCache diagramCache)
+        static public void parentsToJObject(EA.Repository Repository, EA.Diagram diagram, JArray container, IList<int> sampleIds, EA.Element ancestor, IList<EA.Element> parents, IList<int> visited, IList<int> relationsVisited,DiagramCache diagramCache,string intertype)
         {
             logger.log("Parents :" + parents.Count);
 
             foreach (EA.Element parent in parents)
             {
-                parentToJObject(Repository, diagram, container, sampleIds, ancestor, parent, visited,relationsVisited,diagramCache);
+                parentToJObject(Repository, diagram, container, sampleIds, ancestor, parent, visited,relationsVisited,diagramCache,intertype);
             }
         }
 
@@ -199,23 +208,32 @@ namespace RoundTripAddIn
 
             IList<EA.Element> samples = MetaDataManager.diagramSamples(Repository, diagramCache.elementsList);
 
+            samples = samples.Concat(clazzes).ToList();
+
             EA.Element root = MetaDataManager.findContainer(Repository, diagram, diagramCache, RoundTripAddInClass.EA_STEREOTYPE_MAPPING);
                
             logger.log("MetaData container:" + root.Name);
 
-            EA.Element rootClassifier = diagramCache.elementIDHash[root.ClassifierID];
-
-            MetaDataManager.extractDiagramMetaData(result, root);
-
-            logger.log("Export container:" + rootClassifier.Name);
-
-            String prefix = (string)result[RoundTripAddInClass.PREFIX];
-            
-
+            EA.Element rootClassifier = null;
             Dictionary<int, JObject> instances = new Dictionary<int, JObject>();
             JArray container = new JArray();
-            string containerName = root.Name;
-            string containerClassifier = rootClassifier.Name;
+            string containerName = "ALL";
+            string containerClassifier = "Class";
+
+            if (root.ClassifierID != 0)
+            {
+                rootClassifier = diagramCache.elementIDHash[root.ClassifierID];
+                containerName = root.Name;
+                containerClassifier = rootClassifier.Name;
+                logger.log("Export container:" + rootClassifier.Name);
+            }
+        
+            MetaDataManager.extractDiagramMetaData(result, root);
+
+                    
+            String prefix = (string)result[RoundTripAddInClass.PREFIX];
+            String intertype = (string)result[RoundTripAddInClass.INCLUDE_INTERTYPE];
+
 
             IList<int> visited = new List<int>();
             IList<EA.Element> parents = new List<EA.Element>();
@@ -238,7 +256,7 @@ namespace RoundTripAddIn
 
             }
 
-            parentsToJObject(Repository, diagram, container, sampleIds, null, parents, visited,relationsVisited,diagramCache);
+            parentsToJObject(Repository, diagram, container, sampleIds, null, parents, visited,relationsVisited,diagramCache,intertype);
 
             string msg = prefix + JsonConvert.SerializeObject(container, Newtonsoft.Json.Formatting.Indented) + "\n";
 

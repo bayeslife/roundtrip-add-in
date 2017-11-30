@@ -144,6 +144,7 @@ namespace RoundTripAddIn
         public static string PROJECT = "project";
         public static string FILENAME = "filename";
         public static string PREFIX = "prefix";
+        public static string INCLUDE_INTERTYPE = "intertype";
 
         public static string POPULATION_PATH = "population";
         public static string POPULATION_PROPERTY_GUID = "id";
@@ -162,6 +163,8 @@ namespace RoundTripAddIn
         public static string HIERARCHY_PROPERTY_LEVEL = "min";
 
         public static string MAPPING_PATH = "map";
+        public static string MAPPING_PROPERTY_NAME = "name";
+        public static string MAPPING_PROPERTY_NOTES = "notes";
         public static string MAPPING_PROPERTY_SOURCE = "source";
         public static string MAPPING_PROPERTY_SOURCE_NAME = "sourcename";
         public static string MAPPING_PROPERTY_SOURCE_CLASS = "sourceclass";
@@ -174,6 +177,8 @@ namespace RoundTripAddIn
 
         public static string CONSTRAINT_PATH = "constraint";
         public static string CONSTRAINT_PROPERTY_GUID = "id";
+        public static string CONSTRAINT_PROPERTY_SOURCE = "source";
+        public static string CONSTRAINT_PROPERTY_TARGET = "target";
         public static string CONSTRAINT_PROPERTY_NAME = "name";
         public static string CONSTRAINT_PROPERTY_CLASS = "class";
         public static string CONSTRAINT_PROPERTY_STEREOTYPE = "stereotype";

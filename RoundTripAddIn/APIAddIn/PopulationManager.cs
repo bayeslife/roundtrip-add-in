@@ -100,7 +100,7 @@ namespace RoundTripAddIn
                     if (el != null)
                     {
                         //logger.log("Found element for guid" + guid);
-                        sync_population_taggedvalue(Repository, el, classifier, jo, pkg,diagramCache);
+                        ObjectManager.sync_element_taggedvalue(Repository, el, classifier, jo, pkg,diagramCache);
                     } else
                     {
                         logger.log("No element for guid" + guid);
@@ -110,7 +110,7 @@ namespace RoundTripAddIn
                     logger.log("No guid, adding element" + jo.ToString());
                     EA.Element el = pkg.Elements.AddNew("", "Object");
                     logger.log("No guid, adding element" + jo.ToString());
-                    sync_population_taggedvalue(Repository, el, classifier, jo, pkg,diagramCache);
+                    ObjectManager.sync_element_taggedvalue(Repository, el, classifier, jo, pkg,diagramCache);
 
                 }
             }
@@ -177,72 +177,6 @@ namespace RoundTripAddIn
             sample.Update();
         }
 
-        private static void sync_population_taggedvalue(EA.Repository Repository, EA.Element sample, EA.Element classifier, JObject jo, EA.Package pkg, DiagramCache diagramCache)
-        {
-            logger.log("Syncing JObject:" + sample.Name);
-            EA.Collection taggedValues = sample.TaggedValues;            
-
-            sample.ClassifierID = classifier.ElementID;
-
-            foreach (JProperty p in jo.Properties())
-            {
-
-                if (p.Name == RoundTripAddInClass.POPULATION_PROPERTY_GUID)
-                {
-                    continue;
-                }
-                if (p.Name == RoundTripAddInClass.POPULATION_PROPERTY_PACKAGE)
-                {
-                    continue;
-                }
-                if (p.Name == RoundTripAddInClass.POPULATION_PROPERTY_NAME)
-                {
-                    sample.Name = p.Value.ToString();
-                    continue;
-                }
-                if (p.Name == RoundTripAddInClass.POPULATION_PROPERTY_NOTES)
-                {
-                    sample.Notes = p.Value.ToString();
-                    continue;
-                }
-
-
-                if (p.Name == RoundTripAddInClass.POPULATION_PROPERTY_TYPE)
-                {
-                    string classifierName = p.Value.ToString();
-                    EA.Element clazz = RepositoryHelper.queryClassifier(Repository, classifierName);
-                    if (clazz != null)
-                    {
-                        sample.ClassifierID = clazz.ElementID;
-                        continue;
-                    }
-
-
-                }                
-                if (p.Value.Type != JTokenType.Object && p.Value.Type != JTokenType.Array)
-                {
-                    //logger.log("Handling Property:" + p.Name);
-
-                    EA.TaggedValue r = taggedValues.GetByName(p.Name);
-
-                    if (r!=null)
-                    {
-                        //logger.log("Existing Tag");                        
-                        r.Value = p.Value.ToString();
-                        r.Update();
-                    }
-                    else
-                    {
-                        //logger.log("New Tag");                                                
-                        EA.TaggedValue tv = sample.TaggedValues.AddNew(p.Name, RoundTripAddInClass.EA_TYPE_STRING);
-                        tv.Value = p.Value.ToString();
-                        tv.Update();                                             
-                    }
-                                        
-                }
-            }                        
-            sample.Update();
-        }
 
         static public Hashtable sampleToJObject(EA.Repository Repository, EA.Diagram diagram,DiagramCache diagramElements)
         {
@@ -256,18 +190,26 @@ namespace RoundTripAddIn
             IList<EA.Element> samples = MetaDataManager.diagramSamples(Repository, diagramElements.elementsList);
             logger.log("GetSamples" + samples.Count);
 
+            samples = samples.Concat(clazzes).ToList();
+            logger.log("All" + samples.Count);
+
             EA.Element root = MetaDataManager.findContainer(Repository, diagram, diagramElements, RoundTripAddInClass.EA_STEREOTYPE_POPULATION);
 
             MetaDataManager.extractDiagramMetaData(result, root);
 
-            EA.Element rootClassifier = Repository.GetElementByID(root.ClassifierID);
+            logger.log("Classifier ID:" + root.ClassifierID);
 
             Dictionary<int, JObject> instances = new Dictionary<int, JObject>();
             JArray container = new JArray();
-            string containerName = root.Name;
-            string containerClassifier = rootClassifier.Name;
+            string containerName = "All";
+            string containerClassifier = "Classes";
 
-            //instances.Add(root.ElementID, container);
+            if (root.ClassifierID != 0)
+            {                   
+                EA.Element rootClassifier = Repository.GetElementByID(root.ClassifierID);                                
+                containerName = root.Name;
+                containerClassifier = rootClassifier.Name;
+            }                       
 
             foreach (EA.Element sample in samples)
             {
@@ -289,7 +231,7 @@ namespace RoundTripAddIn
                 } else {
                     logger.log("Classifier is null");
                 }
-                                                
+                                                                
 
                 EA.Package package = diagramElements.packageIDHash[sample.PackageID];
 
