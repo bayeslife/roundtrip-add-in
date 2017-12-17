@@ -96,8 +96,6 @@ namespace RoundTripAddIn
    
         static public void parentToJObject(EA.Repository Repository, EA.Diagram diagram, JArray container, IList<int> sampleIds, EA.Element ancestor, EA.Element parent, IList<int> visited, IList<int> relationsVisited,DiagramCache diagramCache,string intertype)
         {
-            
-
             IList<EA.Element> children = new List<EA.Element>();
             visited.Add(parent.ElementID);
             foreach (EA.Connector con in parent.Connectors)
@@ -196,19 +194,26 @@ namespace RoundTripAddIn
 
             foreach (EA.Element parent in parents)
             {
+                logger.log("Handling:" + parent.Name);
                 parentToJObject(Repository, diagram, container, sampleIds, ancestor, parent, visited,relationsVisited,diagramCache,intertype);
             }
         }
 
         static public Hashtable sampleToJObject(EA.Repository Repository, EA.Diagram diagram,DiagramCache diagramCache)
         {
+            logger.log("SampeToJObject");
             Hashtable result = new Hashtable();
 
             IList<EA.Element> clazzes = MetaDataManager.diagramClasses(Repository, diagramCache.elementsList);
 
+            IList<EA.Element> components = MetaDataManager.diagramComponents(Repository, diagramCache.elementsList);
+
             IList<EA.Element> samples = MetaDataManager.diagramSamples(Repository, diagramCache.elementsList);
 
             samples = samples.Concat(clazzes).ToList();
+            samples = samples.Concat(components).ToList();
+
+            logger.log("Samples:" + samples.Count);
 
             EA.Element root = MetaDataManager.findContainer(Repository, diagram, diagramCache, RoundTripAddInClass.EA_STEREOTYPE_MAPPING);
                
@@ -247,10 +252,10 @@ namespace RoundTripAddIn
                 if (sample.Stereotype == RoundTripAddInClass.EA_STEREOTYPE_HIERARCHY)
                     continue;
 
-                if (sample.ClassfierID != root.ClassfierID)
-                    //skip root elements that are the population elements.
+                if (root.ClassifierID !=0 && sample.ClassfierID != root.ClassfierID)
                     continue;
 
+               
                 visited.Add(sample.ElementID);
                 parents.Add(sample);
 
@@ -271,16 +276,18 @@ namespace RoundTripAddIn
         {
             try
             {
+              
                 DiagramManager.captureDiagramLinks(diagram);
 
-                RepositoryHelper.createDiagramCache(Repository, diagram,diagramCache);                
-
+                //logger.log("links captured");
+                RepositoryHelper.createDiagramCache(Repository, diagram,diagramCache);
+                //logger.log("cache created");
                 if (!diagram.Stereotype.Equals(RoundTripAddInClass.EA_STEREOTYPE_MAPPINGDIAGRAM))
                 {
                     logger.log("exportSample: Ignore diagram that isnt a mapping diagram");
                     return;
                 }
-
+            
                 Hashtable ht = sampleToJObject(Repository, diagram,diagramCache);
                 string sample = (string)ht["sample"];
                 string clazz = (string)ht["class"];

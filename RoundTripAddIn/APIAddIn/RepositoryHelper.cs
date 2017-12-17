@@ -92,7 +92,6 @@ namespace RoundTripAddIn
            
         }
 
-        
         static void cacheDiagramClassifiers(EA.Repository repository, DiagramCache diagramCache)
         {            
             Object o;
@@ -116,24 +115,32 @@ namespace RoundTripAddIn
                     sb.Append(",");
                 }                
             }
-            //logger.log("Getting classifiers"+ sb.ToString());
+            logger.log("Getting classifiers"+ sb.ToString());
             
             String classifiersString = sb.ToString();
             if (classifiersString.Length == 0)
                 return;
             classifiersString = classifiersString.Substring(0, classifiersString.Length - 1);
             EA.Collection classifierCollection = repository.GetElementSet(classifiersString, 0);
+
+            logger.log("Classifiers Length" + classifierCollection.Count);
+
             int elementId;
             for (short i = 0; i < classifierCollection.Count; i++)
             {
-                //logger.log("Get classifier" + i);
+                logger.log("Get classifier" + i);
+                logger.log(classifierCollection.GetType().Name);
+               
                 o = classifierCollection.GetAt(i);
+
                 EA.Element element = (EA.Element)o;
                 elementId = element.ElementID;
+                logger.log("A");
                 if (!diagramCache.elementIDHash.ContainsKey(elementId))
                 {
                     diagramCache.elementIDHash.Add(elementId, element);
                 }
+                logger.log("B");
                 if (!diagramCache.elementGuidHash.ContainsKey(element.ElementGUID))
                 {
                     diagramCache.elementGuidHash.Add(element.ElementGUID, element);
@@ -165,10 +172,11 @@ namespace RoundTripAddIn
 
 
         public static DiagramCache createDiagramCache(EA.Repository repository, EA.Diagram diagram, DiagramCache result)
-        {            
-            //DiagramCache result = new DiagramCache();           
+        {                      
             cacheDiagramElements(repository, diagram.DiagramObjects,result);
+            logger.log("cache elements");
             cacheDiagramClassifiers(repository, result);
+            logger.log("cache classifier");
             cacheDiagramPackages(repository, result);
             logger.log(result.elementsList.Count + ":" + result.elementIDHash.Count);
             return result;

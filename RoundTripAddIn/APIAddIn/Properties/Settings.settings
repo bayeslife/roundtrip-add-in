@@ -3,10 +3,10 @@
   <Profiles />
   <Settings>
     <Setting Name="BasePath" Type="System.String" Scope="User">
-      <Value Profile="(Default)">c:\\vdfn-repo\generated</Value>
+      <Value Profile="(Default)">c:\\gti\sandbox</Value>
     </Setting>
     <Setting Name="DiagramPath" Type="System.String" Scope="User">
-      <Value Profile="(Default)">c:\\vdfn-repo</Value>
+      <Value Profile="(Default)">c:\\gti</Value>
     </Setting>
   </Settings>
 </SettingsFile>

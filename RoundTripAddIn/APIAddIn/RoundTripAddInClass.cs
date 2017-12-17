@@ -61,14 +61,11 @@ namespace RoundTripAddIn
         public static string EA_TYPE_CURRENCY = "currency";
         public static string EA_TYPE_ATTRIBUTE = "Attribute";
         public static
-            
-            
-            
-            
-            
-            
-            string EA_TYPE_ASSOCIATION = "Association";
+        
+        string EA_TYPE_ASSOCIATION = "Association";
+
         public static string EA_TYPE_CLASS = "Class";
+        public static string EA_TYPE_COMPONENT = "Component";
         public static string EA_TYPE_OBJECT = "Object";
         public static string EA_TYPE_ENUMERATION = "Enumeration";
         public static string EA_TYPE_PACKAGE = "Package";

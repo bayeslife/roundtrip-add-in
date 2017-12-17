@@ -51,6 +51,17 @@ namespace RoundTripAddIn
             return samples;
         }
 
+        public static IList<EA.Element> diagramComponents(EA.Repository Repository, IList<EA.Element> elements)
+        {
+            List<EA.Element> samples = new List<EA.Element>();
+            foreach (EA.Element el in elements)
+            {
+                if (el.Type.Equals(RoundTripAddInClass.EA_TYPE_COMPONENT))
+                    samples.Add(el);
+            }
+            return samples;
+        }
+
 
         public static IList<EA.Element> diagramElements(EA.Repository Repository)
         {

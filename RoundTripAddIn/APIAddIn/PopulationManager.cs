@@ -15,8 +15,6 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Runtime.Remoting;
 
-
-
 namespace RoundTripAddIn
 {
     public class PopulationManager
@@ -187,10 +185,15 @@ namespace RoundTripAddIn
             IList<EA.Element> clazzes = MetaDataManager.diagramClasses(Repository, diagramElements.elementsList);
             logger.log("GetClazzes" + clazzes.Count);
 
+            IList<EA.Element> components = MetaDataManager.diagramComponents(Repository, diagramElements.elementsList);
+            logger.log("GetComponents" + components.Count);
+
+
             IList<EA.Element> samples = MetaDataManager.diagramSamples(Repository, diagramElements.elementsList);
             logger.log("GetSamples" + samples.Count);
 
             samples = samples.Concat(clazzes).ToList();
+            samples = samples.Concat(components).ToList();
             logger.log("All" + samples.Count);
 
             EA.Element root = MetaDataManager.findContainer(Repository, diagram, diagramElements, RoundTripAddInClass.EA_STEREOTYPE_POPULATION);
@@ -201,7 +204,7 @@ namespace RoundTripAddIn
 
             Dictionary<int, JObject> instances = new Dictionary<int, JObject>();
             JArray container = new JArray();
-            string containerName = "All";
+            string containerName = root.Name;
             string containerClassifier = "Classes";
 
             if (root.ClassifierID != 0)
