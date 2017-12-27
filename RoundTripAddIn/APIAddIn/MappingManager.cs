@@ -109,8 +109,11 @@ namespace RoundTripAddIn
 
                 relationsVisited.Add(con.ConnectorID);
 
-                EA.Element source = parent;                                
+                EA.Element source = diagramCache.elementIDHash[con.ClientID];                                
                 EA.Element target = diagramCache.elementIDHash[con.SupplierID];
+
+                logger.log("Source " + source.Name + " Target " + target.Name +":"+ con.Direction);
+                
 
                 if (source.ClassifierID != target.ClassifierID)
                 {
@@ -118,22 +121,22 @@ namespace RoundTripAddIn
                         continue;
                 }
 
-                if (target.ElementID == parent.ElementID)
+                if (!intertype.Equals("Y") && target.ElementID == parent.ElementID)
                 {                    
                     target = diagramCache.elementIDHash[con.ClientID];
                 }
 
-                
-                if (source.ClassifierID == target.ClassifierID)
+
+                if (!intertype.Equals("Y") && source.ClassifierID == target.ClassifierID)
                 {
                     //If they are of the same type we maintain link direction
-                    if(source.ElementID != con.ClientID)
-                    {                        
+                    if (source.ElementID != con.ClientID)
+                    {
                         EA.Element h = source;
                         source = target;
                         target = h;
                     }
-                }                             
+                }
 
                 String sourceGuid = source.ElementGUID;
                 String sourceName = source.Name;
@@ -167,6 +170,7 @@ namespace RoundTripAddIn
                  //   continue;
 
                 JObject jsonClass = new JObject();
+                jsonClass.Add(new JProperty(RoundTripAddInClass.MAPPING_PROPERTY_ID, con.ConnectorGUID));
                 jsonClass.Add(new JProperty(RoundTripAddInClass.MAPPING_PROPERTY_NAME, con.Name));
                 jsonClass.Add(new JProperty(RoundTripAddInClass.MAPPING_PROPERTY_NOTES, con.Notes));
                 jsonClass.Add(new JProperty(RoundTripAddInClass.MAPPING_PROPERTY_SOURCE, sourceGuid));                
@@ -204,14 +208,16 @@ namespace RoundTripAddIn
             logger.log("SampeToJObject");
             Hashtable result = new Hashtable();
 
-            IList<EA.Element> clazzes = MetaDataManager.diagramClasses(Repository, diagramCache.elementsList);
+            //IList<EA.Element> clazzes = MetaDataManager.diagramClasses(Repository, diagramCache.elementsList);
 
-            IList<EA.Element> components = MetaDataManager.diagramComponents(Repository, diagramCache.elementsList);
+            //IList<EA.Element> components = MetaDataManager.diagramComponents(Repository, diagramCache.elementsList);
 
-            IList<EA.Element> samples = MetaDataManager.diagramSamples(Repository, diagramCache.elementsList);
+            //IList<EA.Element> samples = MetaDataManager.diagramSamples(Repository, diagramCache.elementsList);
 
-            samples = samples.Concat(clazzes).ToList();
-            samples = samples.Concat(components).ToList();
+            //samples = samples.Concat(clazzes).ToList();
+            //samples = samples.Concat(components).ToList();
+
+            IList<EA.Element> samples = diagramCache.elementsList;
 
             logger.log("Samples:" + samples.Count);
 

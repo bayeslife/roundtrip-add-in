@@ -39,12 +39,23 @@ namespace RoundTripAddIn
             RepositoryHelper.createDiagramCache(Repository, diagram,diagramCache);
             IList<EA.Element> diagramElements = diagramCache.elementsList;
 
-            IList<EA.Element> samples = MetaDataManager.diagramSamples(Repository, diagramElements);
+            //IList<EA.Element> samples = MetaDataManager.diagramSamples(Repository, diagramElements);
+            IList<EA.Element> samples = diagramElements;
 
             EA.Element container = container = MetaDataManager.findContainer(Repository, diagram, diagramCache, RoundTripAddInClass.EA_STEREOTYPE_POPULATION);
-            EA.Element containerClassifierEl = Repository.GetElementByID(container.ClassfierID);
+
+            logger.log("Classifier ID:" + container.ClassifierID);
+
+
             string containerName = container.Name;
-            string containerClassifier = containerClassifierEl.Name;
+            string containerClassifier = "Classes";
+            EA.Element containerClassifierEl = null;
+            if (container.ClassifierID!=0)
+            {
+                containerClassifierEl = Repository.GetElementByID(container.ClassfierID);
+                containerName = container.Name;
+                containerClassifier = containerClassifierEl.Name;
+            }
 
             EA.Package samplePkg = Repository.GetPackageByID(diagram.PackageID);
 
@@ -139,7 +150,6 @@ namespace RoundTripAddIn
                     sample.Notes = p.Value.ToString();
                     continue;
                 }
-                
 
                 if (p.Name == RoundTripAddInClass.POPULATION_PROPERTY_TYPE)
                 {
@@ -181,19 +191,20 @@ namespace RoundTripAddIn
             Hashtable result = new Hashtable();
 
             //logger.log("sampleToObject");
-                      
-            IList<EA.Element> clazzes = MetaDataManager.diagramClasses(Repository, diagramElements.elementsList);
-            logger.log("GetClazzes" + clazzes.Count);
 
-            IList<EA.Element> components = MetaDataManager.diagramComponents(Repository, diagramElements.elementsList);
-            logger.log("GetComponents" + components.Count);
+            //IList<EA.Element> clazzes = MetaDataManager.diagramClasses(Repository, diagramElements.elementsList);
+            //logger.log("GetClazzes" + clazzes.Count);
+
+            //IList<EA.Element> components = MetaDataManager.diagramComponents(Repository, diagramElements.elementsList);
+            //logger.log("GetComponents" + components.Count);
 
 
-            IList<EA.Element> samples = MetaDataManager.diagramSamples(Repository, diagramElements.elementsList);
-            logger.log("GetSamples" + samples.Count);
+            //IList<EA.Element> samples = MetaDataManager.diagramSamples(Repository, diagramElements.elementsList);
+            //logger.log("GetSamples" + samples.Count);
 
-            samples = samples.Concat(clazzes).ToList();
-            samples = samples.Concat(components).ToList();
+            //samples = samples.Concat(clazzes).ToList();
+            //samples = samples.Concat(components).ToList();
+            IList<EA.Element> samples = diagramElements.elementsList;
             logger.log("All" + samples.Count);
 
             EA.Element root = MetaDataManager.findContainer(Repository, diagram, diagramElements, RoundTripAddInClass.EA_STEREOTYPE_POPULATION);
@@ -219,11 +230,15 @@ namespace RoundTripAddIn
                 //logger.log("Sample Name:" + sample.Name);
 
                 if (sample.Stereotype == RoundTripAddInClass.EA_STEREOTYPE_POPULATION)
+                {
                     continue;
-
-                if (sample.ClassfierID != root.ClassfierID)
+                }
+                    
+                if (root.ClassifierID!=0 && sample.ClassfierID != root.ClassfierID)
                     //skip root elements that are the population elements.
                     continue;
+
+                //logger.log("Sample Name2:" + sample.Name);
 
                 String type = "";
                 EA.Element clazz = null;
@@ -235,7 +250,6 @@ namespace RoundTripAddIn
                     logger.log("Classifier is null");
                 }
                                                                 
-
                 EA.Package package = diagramElements.packageIDHash[sample.PackageID];
 
                 JObject jsonClass = null;

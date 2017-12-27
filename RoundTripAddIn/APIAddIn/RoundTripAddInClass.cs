@@ -160,6 +160,7 @@ namespace RoundTripAddIn
         public static string HIERARCHY_PROPERTY_LEVEL = "min";
 
         public static string MAPPING_PATH = "map";
+        public static string MAPPING_PROPERTY_ID = "id";
         public static string MAPPING_PROPERTY_NAME = "name";
         public static string MAPPING_PROPERTY_NOTES = "notes";
         public static string MAPPING_PROPERTY_SOURCE = "source";

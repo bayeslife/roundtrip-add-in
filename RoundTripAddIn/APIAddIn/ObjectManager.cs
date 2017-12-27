@@ -265,7 +265,6 @@ namespace RoundTripAddIn
                     continue;
                 }
 
-
                 if (p.Name == RoundTripAddInClass.POPULATION_PROPERTY_TYPE)
                 {
                     string classifierName = p.Value.ToString();
@@ -275,8 +274,10 @@ namespace RoundTripAddIn
                         sample.ClassifierID = clazz.ElementID;
                         continue;
                     }
-
-
+                    else
+                    {
+                        continue;
+                    }
                 }
                 if (p.Value.Type != JTokenType.Object && p.Value.Type != JTokenType.Array)
                 {
